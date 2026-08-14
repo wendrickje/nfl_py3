@@ -417,6 +417,7 @@ def _cmd_splashsports_ingest(args: argparse.Namespace) -> None:
         state_path=args.state_path,
         headless=not args.headed,
         devtools=args.devtools,
+        timeout_ms=args.timeout_ms,
     )
     spreads = parse_splashsports_spreads(page_html, observed_at=observed_at)
     snapshot = write_splashsports_snapshot(
@@ -1880,6 +1881,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--devtools",
         action="store_true",
         help="open Chromium DevTools (Network tab, etc.) for each page; implies --headed",
+    )
+    splashsports_ingest.add_argument(
+        "--timeout-ms",
+        type=int,
+        default=None,
+        help=(
+            "max time to wait for sign-in to resolve; unset uses Playwright's 30s "
+            "default, 0 waits indefinitely (for debugging)"
+        ),
     )
     splashsports_ingest.set_defaults(handler=_cmd_splashsports_ingest)
 

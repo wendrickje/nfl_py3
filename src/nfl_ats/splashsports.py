@@ -154,13 +154,17 @@ def fetch_splashsports_picksheet_html(
     state_path: Path | None = None,
     headless: bool = True,
     devtools: bool = False,
+    timeout_ms: int | None = None,
 ) -> str:
     """Log in and drive to the current week's picksheet, returning its rendered HTML.
 
     Prefers a saved session at `state_path` (from `login_and_save_splashsports_session`
     / `nfl-ats splashsports-login`) when one exists, since it skips the sign-in
     form entirely. Falls back to filling and submitting the form with
-    `credentials` otherwise.
+    `credentials` otherwise. `timeout_ms` bounds the wait for that sign-in to
+    resolve (Playwright's own 30s default if left unset, 0 to wait forever) —
+    the credential path can take longer than 30s if the site's reCAPTCHA is
+    slow to clear.
     """
 
     use_saved_session = state_path is not None and state_path.is_file()
@@ -194,7 +198,7 @@ def fetch_splashsports_picksheet_html(
             try:
                 # Post-login lands on the contests listing, not the per-contest
                 # "my entries" page — that only exists after the card is clicked.
-                page.wait_for_selector(CONTEST_CARD_SELECTOR)
+                page.wait_for_selector(CONTEST_CARD_SELECTOR, timeout=timeout_ms)
             except PlaywrightTimeoutError as error:
                 if use_saved_session:
                     raise ValueError(
@@ -275,9 +279,14 @@ def fetch_splashsports_spreads(
     state_path: Path | None = None,
     headless: bool = True,
     devtools: bool = False,
+    timeout_ms: int | None = None,
 ) -> pd.DataFrame:  # pragma: no cover - thin wrapper around a real-browser call
     page_html = fetch_splashsports_picksheet_html(
-        credentials=credentials, state_path=state_path, headless=headless, devtools=devtools
+        credentials=credentials,
+        state_path=state_path,
+        headless=headless,
+        devtools=devtools,
+        timeout_ms=timeout_ms,
     )
     return parse_splashsports_spreads(page_html)
 
