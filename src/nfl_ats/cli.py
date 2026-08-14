@@ -151,6 +151,12 @@ from nfl_ats.snapshots import (
     load_snapshot,
     snapshot_from_root,
 )
+from nfl_ats.splashsports import (
+    credentials_from_environment,
+    fetch_splashsports_picksheet_html,
+    parse_splashsports_spreads,
+    write_splashsports_snapshot,
+)
 
 
 def _data_root() -> Path:
@@ -385,6 +391,29 @@ def _cmd_odds_ingest(args: argparse.Namespace) -> None:
                 quotes.loc[quotes["nflverse_game_id"].notna(), "provider_event_id"].nunique()
             ),
             "quota": quota,
+        }
+    )
+
+
+def _cmd_splashsports_ingest(args: argparse.Namespace) -> None:
+    credentials = credentials_from_environment()
+    observed_at = datetime.now(UTC)
+    page_html = fetch_splashsports_picksheet_html(credentials, headless=not args.headed)
+    spreads = parse_splashsports_spreads(page_html, observed_at=observed_at)
+    snapshot = write_splashsports_snapshot(
+        page_html,
+        spreads,
+        _data_root() / "market" / "splashsports" / "raw",
+        observed_at=observed_at,
+    )
+    _print_json(
+        {
+            "snapshot_id": snapshot.snapshot_id,
+            "directory": str(snapshot.root),
+            "slate_label": (str(spreads["slate_label"].iloc[0]) if not spreads.empty else None),
+            "rows": len(spreads),
+            "teams": int(spreads["team_id"].nunique()),
+            "missing_spreads": int(spreads["team_spread"].isna().sum()),
         }
     )
 
@@ -1796,6 +1825,17 @@ def build_parser() -> argparse.ArgumentParser:
     odds_ingest.add_argument("--markets", default="spreads,h2h")
     odds_ingest.add_argument("--bookmakers")
     odds_ingest.set_defaults(handler=_cmd_odds_ingest)
+
+    splashsports_ingest = subparsers.add_parser(
+        "splashsports-ingest",
+        help="log in and archive this week's splashsports team-pickem spreads",
+    )
+    splashsports_ingest.add_argument(
+        "--headed",
+        action="store_true",
+        help="show the browser window instead of running headless (useful for debugging login)",
+    )
+    splashsports_ingest.set_defaults(handler=_cmd_splashsports_ingest)
 
     odds_summary = subparsers.add_parser(
         "odds-summary", help="summarize locally archived point-in-time quotes"

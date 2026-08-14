@@ -12,6 +12,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Ryan McIntire" }]
 dependencies = [
   "joblib>=1.4",
+  "lxml>=5",
   "nflreadpy>=0.1.5",
   "numpy>=2.0",
   "pandas>=2.2",
@@ -23,6 +24,9 @@ dependencies = [
 
 [project.scripts]
 nfl-ats = "nfl_ats.cli:main"
+
+[project.optional-dependencies]
+splashsports = ["playwright>=1.47"]
 
 [dependency-groups]
 dev = [
@@ -72,5 +76,5 @@ warn_unreachable = true
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-module = ["nflreadpy.*", "sklearn.*", "joblib.*", "streamlit.*"]
+module = ["nflreadpy.*", "sklearn.*", "joblib.*", "streamlit.*", "playwright.*", "lxml.*"]
 ignore_missing_imports = true

@@ -6,7 +6,7 @@ index, not a substitute for inspecting them.
 
 Handoff schema: `1`
 
-Refreshed at: `2026-08-13T16:09:33.275418+00:00`
+Refreshed at: `2026-08-14T15:47:20.323176+00:00`
 
 ## Start here
 
@@ -19,14 +19,16 @@ Refreshed at: `2026-08-13T16:09:33.275418+00:00`
 
 ## Commit context before this refresh
 
-- Branch: `master`
-- Baseline commit: `daafbcbc1b80` — Add evaluator sensitivity audit and CFB roadmap
-- Pending change set: 5 paths
-  - `M  HANDOFF.md`
-  - `M  README.md`
-  - `M  docs/performance.md`
-  - `M  scripts/sensitivity_audit.py`
-  - `A  tests/test_sensitivity_audit.py`
+- Branch: `claude/affectionate-dijkstra-d3c1qe`
+- Baseline commit: `ed5406a5143e` — Merge pull request #2 from wendrickje/claude/pull-from-source-fork-zocrc6
+- Pending change set: 7 paths
+  - `M  .env.example`
+  - `M  pyproject.toml`
+  - `M  src/nfl_ats/cli.py`
+  - `A  src/nfl_ats/splashsports.py`
+  - `A  tests/fixtures/splashsports_picksheet.html`
+  - `A  tests/test_splashsports.py`
+  - `M  uv.lock`
 
 The baseline commit and pending paths were observed before the automatic refresh.
 They normally describe the parent and contents of the handoff-bearing commit. Always
@@ -34,11 +36,7 @@ trust live Git output after checkout.
 
 ## Current model evidence
 
-- Status: **SYNCHRONIZED**; linked artifacts present: **true**
-- Model ID: `be9326573294de5a`
-- Method/profile/regressor/alpha/calibration: `market_residual` / `player` / `ridge` / `10.0` / `none`
-- Historical ATS classification: **1,080 / 2,075 (52.05%)**
-- Linked forecast: **2026 Week 1**, created `2026-08-12T21:15:33.385895+00:00`
+Local active-model artifacts are unavailable. This is expected in a fresh clone; use the tracked forecast below as the last published state and regenerate local artifacts before changing model claims.
 
 The 52.05% figure is historical forced-pick ATS classification accuracy, not a
 game-specific probability and not proof of a profitable or stable market edge.
@@ -49,17 +47,17 @@ game-specific probability and not proof of a profitable or stable market edge.
 
 ## Local reproducibility inventory
 
-- canonical team features: **present** (`data/processed/game_features.parquet`)
-- play-by-play features: **present** (`data/processed/game_features_pbp.parquet`)
-- player features: **present** (`data/processed/game_features_player.parquet`)
-- player-value research features: **present** (`data/processed/game_features_player_value.parquet`)
-- participation source snapshot: **present** (`data/players/participation/raw/20260813T131635Z/manifest.json`)
-- participation-rating research features: **present** (`data/processed/game_features_player_participation.parquet`)
-- learned-availability research features: **present** (`data/processed/game_features_player_learned_availability.parquet`)
-- frozen player-model selection: **present** (`artifacts/player_model_selection/20260813T124809Z/metadata.json`)
-- participation-rating experiment: **present** (`artifacts/participation_experiments/20260813T132030Z/metadata.json`)
-- learned-availability experiment: **present** (`artifacts/availability_experiments/20260813T133345Z/metadata.json`)
-- active model manifest: **present** (`artifacts/active_ats_model.json`)
+- canonical team features: **missing** (`data/processed/game_features.parquet`)
+- play-by-play features: **missing** (`data/processed/game_features_pbp.parquet`)
+- player features: **missing** (`data/processed/game_features_player.parquet`)
+- player-value research features: **missing** (`data/processed/game_features_player_value.parquet`)
+- participation source snapshot: **missing** (`data/players/participation/raw/LATEST_MANIFEST_MISSING.json`)
+- participation-rating research features: **missing** (`data/processed/game_features_player_participation.parquet`)
+- learned-availability research features: **missing** (`data/processed/game_features_player_learned_availability.parquet`)
+- frozen player-model selection: **missing** (`artifacts/player_model_selection/LATEST_METADATA.JSON_MISSING`)
+- participation-rating experiment: **missing** (`artifacts/participation_experiments/LATEST_METADATA.JSON_MISSING`)
+- learned-availability experiment: **missing** (`artifacts/availability_experiments/LATEST_METADATA.JSON_MISSING`)
+- active model manifest: **missing** (`artifacts/active_ats_model.json`)
 
 Raw data, processed features, fitted models, and evaluation artifacts are intentionally
 ignored by Git. A fresh clone therefore starts with documentation, source, tests, and
