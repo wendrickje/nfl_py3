@@ -193,6 +193,10 @@ def fetch_splashsports_picksheet_html(
             if not use_saved_session and credentials is not None:
                 page.fill(EMAIL_SELECTOR, credentials.email)
                 page.fill(PASSWORD_SELECTOR, credentials.password)
+                # Let whatever async work the form kicks off after typing (the
+                # site's reCAPTCHA included) settle before submitting, rather
+                # than racing it with a fixed sleep.
+                page.wait_for_load_state("networkidle")
                 page.click(SUBMIT_SELECTOR)
 
             try:
