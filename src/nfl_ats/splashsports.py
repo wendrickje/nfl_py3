@@ -108,7 +108,9 @@ def fetch_splashsports_picksheet_html(
             page.fill(EMAIL_SELECTOR, credentials.email)
             page.fill(PASSWORD_SELECTOR, credentials.password)
             page.click(SUBMIT_SELECTOR)
-            page.wait_for_selector(ENTRIES_PAGE_SELECTOR)
+            # Post-login lands on the contests listing, not the per-contest
+            # "my entries" page — that only exists after the card is clicked.
+            page.wait_for_selector(CONTEST_CARD_SELECTOR)
 
             page.click(CONTEST_CARD_SELECTOR)
             page.wait_for_selector(ENTRIES_PAGE_SELECTOR)
