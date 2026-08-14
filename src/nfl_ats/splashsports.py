@@ -94,14 +94,22 @@ def _parse_spread(text: str) -> float | None:
 
 
 def fetch_splashsports_picksheet_html(
-    credentials: SplashsportsCredentials, *, headless: bool = True
+    credentials: SplashsportsCredentials, *, headless: bool = True, devtools: bool = False
 ) -> str:
-    """Log in and drive to the current week's picksheet, returning its rendered HTML."""
+    """Log in and drive to the current week's picksheet, returning its rendered HTML.
+
+    `devtools=True` opens Chromium's DevTools panel (Network tab included) for
+    each page and forces `headless` off, regardless of what was passed in —
+    useful for watching what the sign-in page's captcha does before deciding
+    what to wait for. Playwright's `launch()` dropped the old `devtools=`
+    kwarg, so this uses the Chromium `--auto-open-devtools-for-tabs` flag.
+    """
 
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=headless)
+        launch_args = ["--auto-open-devtools-for-tabs"] if devtools else []
+        browser = playwright.chromium.launch(headless=headless and not devtools, args=launch_args)
         try:
             page = browser.new_page()
             page.goto(SIGN_IN_URL)
@@ -179,9 +187,9 @@ def parse_splashsports_spreads(
 
 
 def fetch_splashsports_spreads(
-    credentials: SplashsportsCredentials, *, headless: bool = True
+    credentials: SplashsportsCredentials, *, headless: bool = True, devtools: bool = False
 ) -> pd.DataFrame:
-    page_html = fetch_splashsports_picksheet_html(credentials, headless=headless)
+    page_html = fetch_splashsports_picksheet_html(credentials, headless=headless, devtools=devtools)
     return parse_splashsports_spreads(page_html)
 
 

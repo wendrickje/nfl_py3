@@ -399,7 +399,9 @@ def _cmd_odds_ingest(args: argparse.Namespace) -> None:
 def _cmd_splashsports_ingest(args: argparse.Namespace) -> None:
     credentials = credentials_from_environment()
     observed_at = datetime.now(UTC)
-    page_html = fetch_splashsports_picksheet_html(credentials, headless=not args.headed)
+    page_html = fetch_splashsports_picksheet_html(
+        credentials, headless=not args.headed, devtools=args.devtools
+    )
     spreads = parse_splashsports_spreads(page_html, observed_at=observed_at)
     snapshot = write_splashsports_snapshot(
         page_html,
@@ -1835,6 +1837,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--headed",
         action="store_true",
         help="show the browser window instead of running headless (useful for debugging login)",
+    )
+    splashsports_ingest.add_argument(
+        "--devtools",
+        action="store_true",
+        help="open Chromium DevTools (Network tab, etc.) for each page; implies --headed",
     )
     splashsports_ingest.set_defaults(handler=_cmd_splashsports_ingest)
 
