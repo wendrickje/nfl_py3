@@ -7,6 +7,15 @@ plain form POST. `fetch_splashsports_picksheet_html` therefore drives a real
 browser session with Playwright. Parsing the resulting markup is kept as a
 separate, pure function (`parse_splashsports_spreads`) so it can be tested
 without a live browser or credentials.
+
+Sign-in is gated by Google reCAPTCHA risk scoring. Filling and submitting the
+form works fine on its own with correct credentials, but has been seen to
+trip `INVALID_RECAPTCHA_ERROR` when a manual sign-in is active in another
+session/tab at the same time. `fetch_splashsports_picksheet_html` therefore
+prefers a saved session (from `login_and_save_splashsports_session` /
+`nfl-ats splashsports-login`, where a human signs in by hand once) when one
+exists, and falls back to filling the form with `SplashsportsCredentials`
+otherwise.
 """
 
 from __future__ import annotations
@@ -31,6 +40,10 @@ CONTEST_CARD_SELECTOR = '[data-test-id="dt.common.components.contestCard"]'
 ENTRIES_PAGE_SELECTOR = '[data-testid="my-entries-page"]'
 FIRST_ENTRY_PICK_SELECTOR = '[data-testid^="entry-pick-"][data-testid$="-0"]'
 PICKSHEET_PAGE_SELECTOR = '[data-testid="picksheet-page"]'
+
+# How long a human has to complete sign-in (including any captcha challenge)
+# in the window opened by `login_and_save_splashsports_session`.
+LOGIN_TIMEOUT_MS = 300_000
 
 # Splashsports team codes that differ from nflverse's standard abbreviations.
 TEAM_CODE_OVERRIDES = {"JAC": "JAX"}
@@ -63,11 +76,11 @@ class SplashsportsSnapshot:
     manifest_path: Path
 
 
-def credentials_from_environment() -> SplashsportsCredentials:
+def credentials_from_environment() -> SplashsportsCredentials | None:
     email = os.environ.get("SPLASHSPORTS_EMAIL")
     password = os.environ.get("SPLASHSPORTS_PASSWORD")
     if not email or not password:
-        raise ValueError("Set SPLASHSPORTS_EMAIL and SPLASHSPORTS_PASSWORD before fetching spreads")
+        return None
     return SplashsportsCredentials(email=email, password=password)
 
 
@@ -93,32 +106,102 @@ def _parse_spread(text: str) -> float | None:
         return None
 
 
-def fetch_splashsports_picksheet_html(
-    credentials: SplashsportsCredentials, *, headless: bool = True, devtools: bool = False
-) -> str:
-    """Log in and drive to the current week's picksheet, returning its rendered HTML.
+def _launch_args(devtools: bool) -> list[str]:
+    return ["--auto-open-devtools-for-tabs"] if devtools else []
 
-    `devtools=True` opens Chromium's DevTools panel (Network tab included) for
-    each page and forces `headless` off, regardless of what was passed in —
-    useful for watching what the sign-in page's captcha does before deciding
-    what to wait for. Playwright's `launch()` dropped the old `devtools=`
-    kwarg, so this uses the Chromium `--auto-open-devtools-for-tabs` flag.
+
+def login_and_save_splashsports_session(
+    state_path: Path,
+    *,
+    headless: bool = False,
+    devtools: bool = False,
+    timeout_ms: int = LOGIN_TIMEOUT_MS,
+) -> None:
+    """Open a browser for a human to sign in, then persist the session.
+
+    Splashsports rejects an automated fill-and-submit of the sign-in form
+    (reCAPTCHA scores it as bot traffic), so this waits for a human to
+    complete the login themselves in the opened window — including whatever
+    challenge Google presents — then saves the resulting cookies/local
+    storage to `state_path` so later runs can skip the sign-in form entirely.
+    `timeout_ms=0` waits indefinitely (Playwright's own convention), useful
+    while debugging the page itself rather than the login.
     """
 
     from playwright.sync_api import sync_playwright
 
-    with sync_playwright() as playwright:
-        launch_args = ["--auto-open-devtools-for-tabs"] if devtools else []
-        browser = playwright.chromium.launch(headless=headless and not devtools, args=launch_args)
+    with sync_playwright() as playwright:  # pragma: no cover - drives a real browser + human login
+        browser = playwright.chromium.launch(
+            headless=headless and not devtools, args=_launch_args(devtools)
+        )
         try:
-            page = browser.new_page()
+            context = browser.new_context()
+            page = context.new_page()
             page.goto(SIGN_IN_URL)
-            page.fill(EMAIL_SELECTOR, credentials.email)
-            page.fill(PASSWORD_SELECTOR, credentials.password)
-            page.click(SUBMIT_SELECTOR)
-            # Post-login lands on the contests listing, not the per-contest
-            # "my entries" page — that only exists after the card is clicked.
-            page.wait_for_selector(CONTEST_CARD_SELECTOR)
+            print(f"Log in manually in the opened browser window: {SIGN_IN_URL}")
+            wait_description = "indefinitely" if timeout_ms == 0 else f"up to {timeout_ms // 1000}s"
+            print(f"Waiting {wait_description} for sign-in to complete...")
+            page.wait_for_selector(CONTEST_CARD_SELECTOR, timeout=timeout_ms)
+            state_path.parent.mkdir(parents=True, exist_ok=True)
+            context.storage_state(path=state_path)
+        finally:
+            browser.close()
+
+
+def fetch_splashsports_picksheet_html(
+    *,
+    credentials: SplashsportsCredentials | None = None,
+    state_path: Path | None = None,
+    headless: bool = True,
+    devtools: bool = False,
+) -> str:
+    """Log in and drive to the current week's picksheet, returning its rendered HTML.
+
+    Prefers a saved session at `state_path` (from `login_and_save_splashsports_session`
+    / `nfl-ats splashsports-login`) when one exists, since it skips the sign-in
+    form entirely. Falls back to filling and submitting the form with
+    `credentials` otherwise.
+    """
+
+    use_saved_session = state_path is not None and state_path.is_file()
+    if not use_saved_session and credentials is None:
+        raise ValueError(
+            "Provide splashsports credentials (SPLASHSPORTS_EMAIL/SPLASHSPORTS_PASSWORD) "
+            "or a saved session; run `nfl-ats splashsports-login` to create one."
+        )
+
+    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as playwright:  # pragma: no cover - drives a real browser
+        browser = playwright.chromium.launch(
+            headless=headless and not devtools, args=_launch_args(devtools)
+        )
+        try:
+            context = (
+                browser.new_context(storage_state=str(state_path))
+                if use_saved_session
+                else browser.new_context()
+            )
+            page = context.new_page()
+            page.goto(SIGN_IN_URL)
+
+            if not use_saved_session and credentials is not None:
+                page.fill(EMAIL_SELECTOR, credentials.email)
+                page.fill(PASSWORD_SELECTOR, credentials.password)
+                page.click(SUBMIT_SELECTOR)
+
+            try:
+                # Post-login lands on the contests listing, not the per-contest
+                # "my entries" page — that only exists after the card is clicked.
+                page.wait_for_selector(CONTEST_CARD_SELECTOR)
+            except PlaywrightTimeoutError as error:
+                if use_saved_session:
+                    raise ValueError(
+                        f"Saved splashsports session at {state_path} looks expired "
+                        "or invalid. Run `nfl-ats splashsports-login` again."
+                    ) from error
+                raise
 
             page.click(CONTEST_CARD_SELECTOR)
             page.wait_for_selector(ENTRIES_PAGE_SELECTOR)
@@ -187,9 +270,15 @@ def parse_splashsports_spreads(
 
 
 def fetch_splashsports_spreads(
-    credentials: SplashsportsCredentials, *, headless: bool = True, devtools: bool = False
-) -> pd.DataFrame:
-    page_html = fetch_splashsports_picksheet_html(credentials, headless=headless, devtools=devtools)
+    *,
+    credentials: SplashsportsCredentials | None = None,
+    state_path: Path | None = None,
+    headless: bool = True,
+    devtools: bool = False,
+) -> pd.DataFrame:  # pragma: no cover - thin wrapper around a real-browser call
+    page_html = fetch_splashsports_picksheet_html(
+        credentials=credentials, state_path=state_path, headless=headless, devtools=devtools
+    )
     return parse_splashsports_spreads(page_html)
 
 

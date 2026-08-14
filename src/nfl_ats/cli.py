@@ -153,8 +153,10 @@ from nfl_ats.snapshots import (
     snapshot_from_root,
 )
 from nfl_ats.splashsports import (
+    LOGIN_TIMEOUT_MS,
     credentials_from_environment,
     fetch_splashsports_picksheet_html,
+    login_and_save_splashsports_session,
     parse_splashsports_spreads,
     write_splashsports_snapshot,
 )
@@ -396,11 +398,25 @@ def _cmd_odds_ingest(args: argparse.Namespace) -> None:
     )
 
 
+def _splashsports_state_path() -> Path:
+    return _data_root() / "market" / "splashsports" / "auth_state.json"
+
+
+def _cmd_splashsports_login(args: argparse.Namespace) -> None:
+    login_and_save_splashsports_session(
+        args.state_path, devtools=args.devtools, timeout_ms=args.timeout_ms
+    )
+    _print_json({"state_path": str(args.state_path)})
+
+
 def _cmd_splashsports_ingest(args: argparse.Namespace) -> None:
     credentials = credentials_from_environment()
     observed_at = datetime.now(UTC)
     page_html = fetch_splashsports_picksheet_html(
-        credentials, headless=not args.headed, devtools=args.devtools
+        credentials=credentials,
+        state_path=args.state_path,
+        headless=not args.headed,
+        devtools=args.devtools,
     )
     spreads = parse_splashsports_spreads(page_html, observed_at=observed_at)
     snapshot = write_splashsports_snapshot(
@@ -1829,10 +1845,32 @@ def build_parser() -> argparse.ArgumentParser:
     odds_ingest.add_argument("--bookmakers")
     odds_ingest.set_defaults(handler=_cmd_odds_ingest)
 
+    splashsports_login = subparsers.add_parser(
+        "splashsports-login",
+        help="open a browser for you to sign in to splashsports by hand and save the session",
+    )
+    splashsports_login.add_argument("--state-path", type=Path, default=_splashsports_state_path())
+    splashsports_login.add_argument(
+        "--devtools",
+        action="store_true",
+        help="open Chromium DevTools (Network tab, etc.) while signing in",
+    )
+    splashsports_login.add_argument(
+        "--timeout-ms",
+        type=int,
+        default=LOGIN_TIMEOUT_MS,
+        help="max time to wait for sign-in to complete; 0 waits indefinitely (for debugging)",
+    )
+    splashsports_login.set_defaults(handler=_cmd_splashsports_login)
+
     splashsports_ingest = subparsers.add_parser(
         "splashsports-ingest",
-        help="log in and archive this week's splashsports team-pickem spreads",
+        help=(
+            "archive this week's splashsports team-pickem spreads; prefers a saved "
+            "session at --state-path, falls back to SPLASHSPORTS_EMAIL/PASSWORD"
+        ),
     )
+    splashsports_ingest.add_argument("--state-path", type=Path, default=_splashsports_state_path())
     splashsports_ingest.add_argument(
         "--headed",
         action="store_true",

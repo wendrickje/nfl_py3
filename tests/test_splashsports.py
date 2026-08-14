@@ -7,7 +7,9 @@ import pandas as pd
 import pytest
 
 from nfl_ats.splashsports import (
+    SplashsportsCredentials,
     credentials_from_environment,
+    fetch_splashsports_picksheet_html,
     normalize_team_code,
     parse_splashsports_spreads,
     write_splashsports_snapshot,
@@ -142,14 +144,22 @@ def test_parse_splashsports_spreads_handles_malformed_rows() -> None:
     assert frame.iloc[0]["slate_label"] is None
 
 
+def test_fetch_splashsports_picksheet_html_requires_credentials_or_session(
+    tmp_path: Path,
+) -> None:
+    missing_state = tmp_path / "auth_state.json"
+
+    with pytest.raises(ValueError, match="splashsports-login"):
+        fetch_splashsports_picksheet_html(state_path=missing_state)
+
+
 def test_credentials_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SPLASHSPORTS_EMAIL", raising=False)
     monkeypatch.delenv("SPLASHSPORTS_PASSWORD", raising=False)
-    with pytest.raises(ValueError, match="SPLASHSPORTS_EMAIL"):
-        credentials_from_environment()
+    assert credentials_from_environment() is None
 
     monkeypatch.setenv("SPLASHSPORTS_EMAIL", "user@example.com")
     monkeypatch.setenv("SPLASHSPORTS_PASSWORD", "hunter2")
-    credentials = credentials_from_environment()
-    assert credentials.email == "user@example.com"
-    assert credentials.password == "hunter2"
+    assert credentials_from_environment() == SplashsportsCredentials(
+        email="user@example.com", password="hunter2"
+    )
