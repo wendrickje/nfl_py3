@@ -14,6 +14,7 @@ from typing import Any
 
 import joblib
 import pandas as pd
+from dotenv import find_dotenv, load_dotenv
 
 from nfl_ats import __version__
 from nfl_ats.active_model import activate_matching_ats_model
@@ -2217,6 +2218,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # `usecwd=True` finds a `.env` starting from where the command is run,
+    # not near this installed source file (dotenv's default search anchor).
+    load_dotenv(find_dotenv(usecwd=True))
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
