@@ -4,6 +4,10 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .pytest_graph/
+.pytest_tmp/
+.test-tmp-*/
+.agent_tmp/
+.tmp/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -20,6 +24,7 @@ data/raw/**
 data/processed/**
 data/market/**
 data/pbp/**
+data/cfb/**
 data/players/**
 data/quarterbacks/**
 artifacts/**
@@ -27,11 +32,21 @@ artifacts/**
 !data/processed/.gitkeep
 !artifacts/.gitkeep
 
+# The prospective challenger registry is a PRE-COMMITMENT DECLARATION, not
+# generated output: it is the only record that a challenger's configuration was
+# frozen before the season it is scored on, and its anti-retuning guarantee is
+# only worth what its timestamped history proves. Tracked for the same reason
+# registry/rotation_registry.json and registry/weak_signals.json are tracked.
+# The decision ledger beside it stays ignored -- that one IS generated data.
+!artifacts/prospective/
+!artifacts/prospective/challengers.json
+
 # Local credentials and editor state
 .env
 .env.*
 !.env.example
 .creds
+.secrets/
 .cookies
 .idea/
 .vscode/
@@ -40,3 +55,31 @@ artifacts/**
 # OS files
 .DS_Store
 Thumbs.db
+.claude/
+
+services/swarm runtime artifacts
+scripts/swarm/.*_running
+scripts/swarm/wave2b_manifest.txt
+
+# Capture scheduler runtime state (machine-local)
+data/scheduler_state.json
+data/scheduler_heartbeat.json
+data/scheduler_log.txt
+
+# Stdout/stderr capture from long-running background fetches. These land at the
+# repo root while a scrape is in flight (e.g. pfr_extend_fetch.*.log from the
+# transaction-wire per-article date backfill) and are machine-local progress
+# noise, never evidence -- the evidence is the snapshot manifest under data/raw/.
+*.stdout.log
+*.stderr.log
+
+# Personal Claude Code overrides (never committed)
+.claude/settings.local.json
+
+# Played-card lineage written beside CURRENT_PREDICTIONS.md by publish-predictions (ENG-24);
+# generated evidence, mirrored in the forecast artifact, not a tracked deliverable.
+/lineage.json
+
+# ENG-14 source-policy block, persisted beside CURRENT_PREDICTIONS.md by publish-predictions
+# (ENG-34); generated evidence, mirrored in the forecast artifact, not a tracked deliverable.
+/source_policy.json

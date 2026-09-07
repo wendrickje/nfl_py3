@@ -4,20 +4,34 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable
+from typing import cast
 
 import numpy as np
 import pandas as pd
 
 from nfl_ats.constants import (
+    BIAS_FEATURE_COLUMNS,
+    BIAS_METRICS,
+    DEFAULT_OFFSEASON_RETENTION,
     GRAPH_FEATURE_COLUMNS,
     IDENTIFIER_COLUMNS,
     MODEL_FEATURE_COLUMNS,
     OUTCOME_COLUMNS,
     STATE_METRICS,
+    SURFACE_SWITCH_FEATURE_COLUMNS,
     TEAM_ABBREVIATION_ALIASES,
 )
 from nfl_ats.data import DataContractError, validate_schedules, validate_team_stats
 from nfl_ats.graph_ratings import GraphRatingConfig, add_schedule_strength_features
+
+#: Builder version for the base game-feature families (market, context, elo,
+#: experience, offense/results/defense state, graph, schedule rating, bias,
+#: surface switch).  The enrichment builders already stamp their own versions
+#: (``pbp.PBP_FEATURE_VERSION``, ``players.PLAYER_FEATURE_VERSION``,
+#: ``quarterbacks.QB_FEATURE_VERSION``); this one existed only implicitly until
+#: ``nfl_ats.lineage`` needed to name the builder behind every card field.
+#: Bump it when a base family's definition changes.
+BUILDER_VERSION = "v1"
 
 
 def _numeric(frame: pd.DataFrame, column: str, default: float = math.nan) -> pd.Series:
@@ -49,15 +63,21 @@ def add_ats_outcomes(schedules: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def _regular_season_schedules(schedules: pd.DataFrame) -> pd.DataFrame:
+POSTSEASON_GAME_TYPES = ("WC", "DIV", "CON", "SB")
+
+
+def _canonical_schedules(
+    schedules: pd.DataFrame,
+    game_types: tuple[str, ...] = ("REG",),
+) -> pd.DataFrame:
     validate_schedules(schedules)
-    regular = schedules.loc[schedules["game_type"].eq("REG")].copy()
-    regular["gameday"] = pd.to_datetime(regular["gameday"], errors="raise")
-    regular["season"] = pd.to_numeric(regular["season"], errors="raise").astype(int)
-    regular["week"] = pd.to_numeric(regular["week"], errors="raise").astype(int)
+    selected = schedules.loc[schedules["game_type"].isin(game_types)].copy()
+    selected["gameday"] = pd.to_datetime(selected["gameday"], errors="raise")
+    selected["season"] = pd.to_numeric(selected["season"], errors="raise").astype(int)
+    selected["week"] = pd.to_numeric(selected["week"], errors="raise").astype(int)
     for column in ("home_team", "away_team"):
-        regular[column] = regular[column].replace(TEAM_ABBREVIATION_ALIASES)
-    return regular.sort_values(["gameday", "game_id"]).reset_index(drop=True)
+        selected[column] = selected[column].replace(TEAM_ABBREVIATION_ALIASES)
+    return selected.sort_values(["gameday", "game_id"]).reset_index(drop=True)
 
 
 def _kickoff_utc(games: pd.DataFrame) -> pd.Series:
@@ -76,16 +96,18 @@ def _kickoff_utc(games: pd.DataFrame) -> pd.Series:
 def build_team_game_metrics(
     schedules: pd.DataFrame,
     team_stats: pd.DataFrame,
+    game_types: tuple[str, ...] = ("REG",),
 ) -> pd.DataFrame:
     """Create offense and opponent-derived defense metrics for completed games."""
 
     validate_team_stats(team_stats)
     stats = team_stats.copy()
     stats["team"] = stats["team"].replace(TEAM_ABBREVIATION_ALIASES)
+    season_types = {"REG"} if game_types == ("REG",) else {"REG", "POST"}
     if "season_type" in stats:
-        stats = stats.loc[stats["season_type"].eq("REG")].copy()
+        stats = stats.loc[stats["season_type"].isin(season_types)].copy()
 
-    games = _regular_season_schedules(schedules)
+    games = _canonical_schedules(schedules, game_types=game_types)
     schedule_columns = [
         "game_id",
         "season",
@@ -182,7 +204,7 @@ def build_team_states(
     team_games: pd.DataFrame,
     span: int = 8,
     min_periods: int = 3,
-    offseason_retention: float = 0.67,
+    offseason_retention: float = DEFAULT_OFFSEASON_RETENTION,
 ) -> pd.DataFrame:
     """Calculate state after each completed game.
 
@@ -250,7 +272,7 @@ def build_team_states(
 def attach_team_states(
     games: pd.DataFrame,
     states: pd.DataFrame,
-    offseason_retention: float = 0.67,
+    offseason_retention: float = DEFAULT_OFFSEASON_RETENTION,
 ) -> pd.DataFrame:
     """Attach the most recent state strictly before each game's date."""
 
@@ -298,7 +320,7 @@ def add_elo_features(
     games: pd.DataFrame,
     k_factor: float = 20.0,
     home_field_elo: float = 55.0,
-    offseason_retention: float = 0.67,
+    offseason_retention: float = DEFAULT_OFFSEASON_RETENTION,
 ) -> pd.DataFrame:
     """Add pregame Elo ratings using only previously completed games."""
 
@@ -344,21 +366,238 @@ def add_elo_features(
     return result
 
 
-def build_game_features(
+def _team_game_log(schedules: pd.DataFrame) -> pd.DataFrame:
+    """Return one row per team per scheduled game, ATS margin team-signed.
+
+    Postseason rows are always included: the bias family reads them for the
+    week-1 holdover flag, and a playoff row's own recency should see earlier
+    playoff rounds. Nothing here depends on the caller's game-type pass, so
+    regular-season values are identical in both passes of the two-pass build.
+    """
+
+    history = add_ats_outcomes(
+        _canonical_schedules(schedules, game_types=("REG", *POSTSEASON_GAME_TYPES))
+    )
+    sides = []
+    for side, sign in (("home", 1.0), ("away", -1.0)):
+        sides.append(
+            pd.DataFrame(
+                {
+                    "team": history[f"{side}_team"].astype(str),
+                    "season": history["season"].astype(int),
+                    "gameday": history["gameday"],
+                    "game_id": history["game_id"].astype(str),
+                    "game_type": history["game_type"].astype(str),
+                    "result": history["result"],
+                    # Team perspective, matching `ats_residual` in the team-state
+                    # builder: the schedule's ats_margin is home-signed.
+                    "team_ats_margin": sign * history["ats_margin"],
+                }
+            )
+        )
+    return (
+        pd.concat(sides, ignore_index=True)
+        .sort_values(["gameday", "game_id", "team"])
+        .reset_index(drop=True)
+    )
+
+
+def add_bias_features(games: pd.DataFrame, schedules: pd.DataFrame) -> pd.DataFrame:
+    """Add the opener-bias family (MOD-07), computed from schedules alone.
+
+    Three leak-safe signals from the published opener-bias literature:
+
+    - ``bias_playoff_holdover_*``: 1.0 when the game is a week-1 game and the
+      team played at least one postseason game in the previous season.
+    - ``bias_prior_week_ats_*``: the team's single previous completed game's
+      ATS margin this season, NaN when there is none. This is a strict
+      earlier-than lookup (the same pattern as ``attach_team_states``) on the
+      single most recent game — deliberately distinct from the exponentially
+      weighted ``state_ats_residual``.
+    - ``bias_week2_anchor_*``: the prior-week ATS margin masked to week 2,
+      0.0 elsewhere (the anchoring result is specific to week 2).
+
+    Each is emitted per side plus a home-minus-away difference.
+    """
+
+    result = games.copy()
+    log = _team_game_log(schedules)
+
+    postseason_appearances = {
+        (str(team), int(season))
+        for team, season in zip(
+            log.loc[log["game_type"].isin(POSTSEASON_GAME_TYPES), "team"],
+            log.loc[log["game_type"].isin(POSTSEASON_GAME_TYPES), "season"],
+            strict=True,
+        )
+    }
+    completed = log.loc[log["result"].notna()]
+    # One strictly-earlier-than lookup table per team-season, ordered by date.
+    histories: dict[tuple[str, int], tuple[np.ndarray, np.ndarray]] = {}
+    for key, group in completed.groupby(["team", "season"], sort=False):
+        team_key, season_key = cast("tuple[str, int]", key)
+        histories[(str(team_key), int(season_key))] = (
+            group["gameday"].to_numpy(dtype="datetime64[ns]"),
+            group["team_ats_margin"].to_numpy(dtype="float64"),
+        )
+
+    week = pd.to_numeric(result["week"], errors="raise").astype(int)
+    seasons = pd.to_numeric(result["season"], errors="raise").astype(int).to_numpy()
+    weeks = week.to_numpy()
+    gamedays = pd.to_datetime(result["gameday"], errors="raise").to_numpy(dtype="datetime64[ns]")
+
+    for side in ("home", "away"):
+        teams = result[f"{side}_team"].astype(str).to_numpy()
+        holdovers: list[float] = []
+        priors: list[float] = []
+        for position in range(len(result)):
+            team = str(teams[position])
+            season = int(seasons[position])
+            holdovers.append(
+                1.0
+                if int(weeks[position]) == 1 and (team, season - 1) in postseason_appearances
+                else 0.0
+            )
+            prior = math.nan
+            history = histories.get((team, season))
+            if history is not None:
+                dates, margins = history
+                index = int(np.searchsorted(dates, gamedays[position], side="left")) - 1
+                if index >= 0:
+                    prior = float(margins[index])
+            priors.append(prior)
+
+        result[f"bias_playoff_holdover_{side}"] = pd.Series(
+            holdovers, index=result.index, dtype="float64"
+        )
+        result[f"bias_prior_week_ats_{side}"] = pd.Series(
+            priors, index=result.index, dtype="float64"
+        )
+        result[f"bias_week2_anchor_{side}"] = result[f"bias_prior_week_ats_{side}"].where(
+            week.eq(2), 0.0
+        )
+
+    for metric in BIAS_METRICS:
+        result[f"{metric}_diff"] = result[f"{metric}_home"] - result[f"{metric}_away"]
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Surface-switch tilt candidate (docs/surface_switch_feature_arm.md)
+# ---------------------------------------------------------------------------
+#
+# Ported VERBATIM from ``nfl_ats.surface_switch_tilt_overlay.surface_switch_flag_by_game``
+# (itself ported verbatim from ``scripts/nfl_weather_battery_screen.py``'s
+# ``_normalize_surface``/``load_population``), so this training-time feature
+# is bit-identical to the pick-level overlay's own flag and to the registry-
+# measured construct it is named after (``weather_battery_surface_switch_grass_to_turf``,
+# ``surface_familiarity_r1_turf_venue_visitor_split``). Duplicated here rather
+# than imported: ``surface_switch_tilt_overlay`` sits well above ``features``
+# in the dependency graph (it pulls in ``clv``/``prospective_scoring``), and
+# this module is foundational, so a verbatim, independently-tested copy keeps
+# the import graph shallow -- the same "ported, not re-derived" convention
+# already used twice for this exact construct (the screen script and the
+# overlay module).
+_SURFACE_SWITCH_GRASS_SURFACES = frozenset({"grass", "dessograss"})
+_SURFACE_SWITCH_TURF_SURFACES = frozenset(
+    {"fieldturf", "sportturf", "matrixturf", "astroturf", "a_turf", "astroplay"}
+)
+
+
+def _normalize_switch_surface(raw: object) -> str | None:
+    if not isinstance(raw, str):
+        return None
+    value = raw.strip().lower()
+    if value in _SURFACE_SWITCH_GRASS_SURFACES:
+        return "grass"
+    if value in _SURFACE_SWITCH_TURF_SURFACES:
+        return "turf"
+    return None
+
+
+def add_surface_switch_features(games: pd.DataFrame, schedules: pd.DataFrame) -> pd.DataFrame:
+    """Add ``surface_switch_flag`` (MOD-08 candidate family), computed from schedules alone.
+
+    Fires (``1.0``) when the AWAY team's modal home surface THIS SEASON
+    normalizes to grass AND this game's own surface normalizes to turf --
+    exactly ``surface_switch_tilt_overlay.surface_switch_flag_by_game``'s
+    construct, restricted to REG-season games (every registry read this
+    feature is named after -- the weather-battery cell, the venue-controlled
+    follow-up, the CFB replication -- was scored on regular-season games
+    only, matching the overlay's own REG-only gate). POST rows and rows with
+    no resolvable surface data get ``0.0``, never ``NaN``, so ridge sees a
+    clean binary feature with no imputation needed.
+
+    **Why a full-season aggregate is pregame-safe** (restated from
+    ``surface_switch_tilt_overlay.surface_switch_flag_by_game``, not
+    re-argued): a team's home-stadium surface is a STRUCTURAL, stadium-level
+    fact fixed for essentially the entire season and public before Week 1 --
+    unlike the coach/QB-continuity overlays' strictly-prior-only aggregates,
+    it is not an outcome, and this function never reads ``result`` or
+    ``spread_line`` at all. ``tests/test_features.py`` carries the same two
+    leakage regression tests
+    ``tests/test_surface_switch_tilt_overlay.py`` already established for
+    the identical construct: the flag is unaffected by any outcome-bearing
+    column, and a future season's surface data never changes an earlier
+    season's already-computed flags.
+
+    Reads the caller's full ``schedules`` frame (not this pass's filtered
+    ``games``), mirroring ``add_bias_features``, so the modal-surface
+    derivation is pass-independent. Missing the ``surface`` column entirely
+    (older synthetic fixtures, matching the ``temp``/``wind`` graceful-
+    default precedent below) yields ``0.0`` for every row rather than
+    raising -- this is a schedule-shaped enrichment, not a hard data
+    contract, matching how the neighbouring schedule-derived context columns
+    handle absent inputs.
+    """
+
+    result = games.copy()
+    if "surface" not in schedules.columns:
+        result[SURFACE_SWITCH_FEATURE_COLUMNS[0]] = 0.0
+        return result
+
+    reg = schedules.loc[schedules["game_type"].astype(str).eq("REG")].copy()
+    reg["home_team"] = reg["home_team"].astype(str).replace(TEAM_ABBREVIATION_ALIASES)
+    reg["away_team"] = reg["away_team"].astype(str).replace(TEAM_ABBREVIATION_ALIASES)
+    reg["season"] = pd.to_numeric(reg["season"], errors="raise").astype(int)
+    reg["surface_norm"] = reg["surface"].map(_normalize_switch_surface)
+
+    modal_surface = (
+        reg.groupby(["home_team", "season"])["surface_norm"]
+        .agg(lambda s: s.mode().iat[0] if not s.mode(dropna=True).empty else None)  # type: ignore[type-var]
+        .rename("away_modal_surface")
+    )
+    flags = reg[["game_id", "away_team", "season", "surface_norm"]].merge(
+        modal_surface, left_on=["away_team", "season"], right_index=True, how="left"
+    )
+    flags["game_id"] = flags["game_id"].astype(str)
+    flags[SURFACE_SWITCH_FEATURE_COLUMNS[0]] = (
+        flags["away_modal_surface"].eq("grass") & flags["surface_norm"].eq("turf")
+    ).astype(float)
+    flags = flags[["game_id", SURFACE_SWITCH_FEATURE_COLUMNS[0]]].drop_duplicates("game_id")
+
+    result["game_id"] = result["game_id"].astype(str)
+    result = result.merge(flags, on="game_id", how="left")
+    result[SURFACE_SWITCH_FEATURE_COLUMNS[0]] = result[SURFACE_SWITCH_FEATURE_COLUMNS[0]].fillna(
+        0.0
+    )
+    return result
+
+
+def _build_features_pass(
     schedules: pd.DataFrame,
     team_stats: pd.DataFrame,
+    game_types: tuple[str, ...],
     span: int = 8,
     min_periods: int = 3,
-    offseason_retention: float = 0.67,
+    offseason_retention: float = DEFAULT_OFFSEASON_RETENTION,
     graph_half_life_weeks: float = 8.0,
     graph_ridge_alpha: float = 8.0,
     graph_min_games: int = 16,
 ) -> pd.DataFrame:
-    """Build the canonical model table with one row per regular-season game."""
-
-    games = add_ats_outcomes(_regular_season_schedules(schedules))
+    games = add_ats_outcomes(_canonical_schedules(schedules, game_types=game_types))
     games["kickoff"] = _kickoff_utc(games)
-    games = add_elo_features(games)
+    games = add_elo_features(games, offseason_retention=offseason_retention)
     games = add_schedule_strength_features(
         games,
         GraphRatingConfig(
@@ -368,7 +607,7 @@ def build_game_features(
             min_games=graph_min_games,
         ),
     )
-    team_games = build_team_game_metrics(games, team_stats)
+    team_games = build_team_game_metrics(games, team_stats, game_types=game_types)
     states = build_team_states(
         team_games,
         span=span,
@@ -376,6 +615,10 @@ def build_game_features(
         offseason_retention=offseason_retention,
     )
     games = attach_team_states(games, states, offseason_retention=offseason_retention)
+    # Reads the caller's full schedules frame (postseason included) rather than
+    # this pass's filtered games, so the values are pass-independent.
+    games = add_bias_features(games, schedules)
+    games = add_surface_switch_features(games, schedules)
 
     for column in (
         "total_line",
@@ -400,8 +643,11 @@ def build_game_features(
         else pd.Series("Home", index=games.index, dtype="string")
     )
     games["neutral_site"] = location.astype(str).str.lower().eq("neutral").astype(int)
-    games["week_sin"] = np.sin(2.0 * np.pi * games["week"] / 18.0)
-    games["week_cos"] = np.cos(2.0 * np.pi * games["week"] / 18.0)
+    # Postseason weeks clamp to the top of the regular-season cycle instead of
+    # wrapping the cyclic encoding back to September. A no-op for REG rows.
+    encoded_week = pd.to_numeric(games["week"], errors="raise").clip(upper=18)
+    games["week_sin"] = np.sin(2.0 * np.pi * encoded_week / 18.0)
+    games["week_cos"] = np.cos(2.0 * np.pi * encoded_week / 18.0)
 
     for column in MODEL_FEATURE_COLUMNS:
         if column not in games:
@@ -425,5 +671,63 @@ def build_game_features(
         "away_spread_odds",
         *OUTCOME_COLUMNS,
     ]
-    ordered = list(dict.fromkeys([*passthrough, *MODEL_FEATURE_COLUMNS, *GRAPH_FEATURE_COLUMNS]))
+    ordered = list(
+        dict.fromkeys(
+            [
+                *passthrough,
+                *MODEL_FEATURE_COLUMNS,
+                *GRAPH_FEATURE_COLUMNS,
+                *BIAS_FEATURE_COLUMNS,
+                *SURFACE_SWITCH_FEATURE_COLUMNS,
+            ]
+        )
+    )
     return games[ordered].sort_values(["gameday", "game_id"]).reset_index(drop=True)
+
+
+def build_game_features(
+    schedules: pd.DataFrame,
+    team_stats: pd.DataFrame,
+    span: int = 8,
+    min_periods: int = 3,
+    offseason_retention: float = DEFAULT_OFFSEASON_RETENTION,
+    graph_half_life_weeks: float = 8.0,
+    graph_ridge_alpha: float = 8.0,
+    graph_min_games: int = 16,
+    include_postseason: bool = False,
+) -> pd.DataFrame:
+    """Build the canonical model table, one row per game.
+
+    Regular-season rows always come from a REG-only pass, so their features
+    are bit-identical whether or not postseason rows are requested: playoff
+    results never feed the Elo, graph, or team-state histories that REG rows
+    see, preserving the frozen evaluation's meaning. When
+    ``include_postseason`` is set, a second pass replays the same build with
+    WC/DIV/CON/SB games included in every rolling state, and only that pass's
+    postseason rows are kept — so a Super Bowl row sees both teams'
+    conference-round form, while using strictly earlier games only.
+    """
+
+    def build_pass(game_types: tuple[str, ...]) -> pd.DataFrame:
+        return _build_features_pass(
+            schedules,
+            team_stats,
+            game_types,
+            span=span,
+            min_periods=min_periods,
+            offseason_retention=offseason_retention,
+            graph_half_life_weeks=graph_half_life_weeks,
+            graph_ridge_alpha=graph_ridge_alpha,
+            graph_min_games=graph_min_games,
+        )
+
+    regular = build_pass(("REG",))
+    if not include_postseason or not schedules["game_type"].isin(POSTSEASON_GAME_TYPES).any():
+        return regular
+    combined = build_pass(("REG", *POSTSEASON_GAME_TYPES))
+    postseason = combined.loc[combined["game_type"].ne("REG")]
+    return (
+        pd.concat([regular, postseason], ignore_index=True)
+        .sort_values(["gameday", "game_id"])
+        .reset_index(drop=True)
+    )

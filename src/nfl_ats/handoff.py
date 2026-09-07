@@ -9,8 +9,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from nfl_ats.active_model import active_artifact_path, load_active_ats_model
+from nfl_ats.active_model import (
+    active_artifact_path,
+    load_active_ats_model,
+    matching_opener_evaluation,
+)
 from nfl_ats.io import atomic_text
+from nfl_ats.player_arrests_back_side_overlay import (
+    POLICY_BASELINE_OPENER_ACCURACY,
+    POLICY_EFFECT_ACCURACY_POINTS,
+    POLICY_GRADED_GAMES,
+    POLICY_OPENER_ACCURACY,
+    POLICY_PROBABILITY_POSITIVE,
+)
+from nfl_ats.readme_state import readme_state_failures, regenerate_readme_state
 
 HANDOFF_VERSION = 1
 
@@ -92,7 +104,12 @@ def _tracked_publication(predictions_path: Path) -> dict[str, str] | None:
         return None
     text = predictions_path.read_text(encoding="utf-8")
     title = re.search(r"^# NFL ATS predictions: (\d+) Week (\d+)$", text, re.MULTILINE)
-    model = re.search(r"Published from synchronized model `([^`]+)` at `([^`]+)`", text)
+    # Since 2026-09-05 the card's reader-facing sentence carries no id or
+    # timestamp (owner rule: the board is for humans); the machine-readable
+    # record is an HTML comment. Older cards keep the legacy backtick line.
+    model = re.search(
+        r"<!-- publication: model_id=(\S+) published_at_utc=(\S+) -->", text
+    ) or re.search(r"Published from synchronized model `([^`]+)` at `([^`]+)`", text)
     if title is None or model is None:
         return None
     return {
@@ -185,6 +202,26 @@ def _model_markdown(artifacts_root: Path) -> tuple[str, dict[str, Any] | None]:
         and forecast_path is not None
         and forecast_path.is_dir()
     )
+    opener = matching_opener_evaluation(artifacts_root, active)
+    opener_text = (
+        "- Raw-model baseline (opener-graded probability rule): **unavailable in local artifacts**"
+        if opener is None
+        else (
+            "- Raw-model baseline (opener-graded probability rule): "
+            f"**{opener[1]['metrics']['opener_accuracy_probability_rule']:.2%}** on "
+            f"**{opener[1]['games']:,} games** "
+            f"(`opener_evaluation/{opener[0].name}`)"
+        )
+    )
+    production_policy_text = (
+        "- Promoted player-arrest policy component (opener-graded): "
+        f"**{POLICY_OPENER_ACCURACY:.2%}** versus "
+        f"**{POLICY_BASELINE_OPENER_ACCURACY:.2%}** on "
+        f"**{POLICY_GRADED_GAMES:,} games** "
+        f"(+{POLICY_EFFECT_ACCURACY_POINTS:.3f} accuracy points; "
+        f"`probability_positive={POLICY_PROBABILITY_POSITIVE:.4f}`); the live card "
+        "applies this after the coach policy, while paired prospective tracking continues"
+    )
     text = (
         f"- Status: **{active['status']}**; linked artifacts present: **{str(linked).lower()}**\n"
         f"- Model ID: `{active['model_id']}`\n"
@@ -192,12 +229,39 @@ def _model_markdown(artifacts_root: Path) -> tuple[str, dict[str, Any] | None]:
         f"`{active['feature_profile']}` / `{active['regressor']}` / "
         f"`{active.get('ridge_alpha', 10.0)}` / "
         f"`{active.get('calibration_method', 'none')}`\n"
-        f"- Historical ATS classification: **{historical['correct']:,} / "
+        f"{opener_text}\n"
+        f"{production_policy_text}\n"
+        f"- Secondary close-grade historical classification: **{historical['correct']:,} / "
         f"{historical['games']:,} ({historical['accuracy']:.2%})**\n"
         f"- Linked forecast: **{weekly['season']} Week {weekly['week']}**, created "
         f"`{weekly['created_at_utc']}`"
     )
     return text, active
+
+
+def _accuracy_disclaimer(active: dict[str, Any] | None) -> str:
+    """Derive the historical-accuracy disclaimer from the active model, not a literal.
+
+    A hardcoded figure here drifts from reality the moment the active model
+    changes (it once read "52.05%" while the model evidence above it reported
+    51.57%). The number is now read from `historical_evaluation` every render;
+    the disclaimer's WARNING never changes (AGENTS.md forbids describing this
+    accuracy as proof of a profitable or stable market edge).
+    """
+
+    if active is None:
+        return (
+            "Historical forced-pick ATS classification accuracy (see "
+            "`artifacts/active_ats_model.json` once local artifacts exist) is not a "
+            "game-specific probability and not proof of a profitable or stable market edge."
+        )
+    accuracy = active["historical_evaluation"]["accuracy"]
+    return (
+        f"The {accuracy:.2%} figure is the distinct secondary close-grade historical "
+        "classification, not the raw-model opener baseline, the promoted player-arrest "
+        "policy evaluation, a game-specific "
+        "probability, or proof of a profitable or stable market edge."
+    )
 
 
 def _changes_markdown(state: RepositoryState) -> str:
@@ -213,8 +277,9 @@ def check_session_handoff(
     repo_root: Path,
     artifacts_root: Path,
     handoff_path: Path,
+    registry_root: Path | None = None,
 ) -> dict[str, Any]:
-    """Fail when the tracked handoff disagrees with current durable state."""
+    """Fail when the tracked handoff or README generated blocks are stale."""
 
     path = handoff_path if handoff_path.is_absolute() else repo_root / handoff_path
     if not path.is_file():
@@ -241,11 +306,34 @@ def check_session_handoff(
             failures.append("local active model is not reflected in the handoff")
         if publication is not None and active["model_id"] != publication["model_id"]:
             failures.append("local active model and tracked weekly publication do not match")
+        opener = matching_opener_evaluation(artifacts_root, active)
+        if opener is not None:
+            opener_accuracy = opener[1]["metrics"]["opener_accuracy_probability_rule"]
+            if f"**{opener_accuracy:.2%}**" not in text:
+                failures.append("opener-grade raw-model baseline is not reflected in the handoff")
 
     priorities = _roadmap_priorities(repo_root / "ROADMAP.md")
     missing_priorities = [priority for priority in priorities if priority not in text]
     if missing_priorities:
         failures.append("roadmap execution priorities are not reflected in the handoff")
+
+    # Extend the same freshness protection to the README's own generated
+    # blocks (ACTIVE_MODEL_STATE / RESEARCH_STATE, see nfl_ats.readme_state).
+    # A README-less fixture/environment is not itself a failure here -- only
+    # drift in a README that exists is; requiring the file would break every
+    # caller that legitimately has no README (e.g. this module's own tests).
+    readme_path = repo_root / "README.md"
+    if readme_path.is_file():
+        failures.extend(
+            readme_state_failures(
+                readme_path.read_text(encoding="utf-8"),
+                artifacts_root=artifacts_root,
+                registry_root=(
+                    registry_root if registry_root is not None else repo_root / "registry"
+                ),
+            )
+        )
+
     if failures:
         raise ValueError("Stale session handoff: " + "; ".join(failures))
     return {
@@ -268,6 +356,7 @@ def render_handoff(
     """Render the handoff and return machine-readable headline facts."""
 
     model_text, active = _model_markdown(artifacts_root)
+    accuracy_disclaimer = _accuracy_disclaimer(active)
     publication = _tracked_publication(repo_root / "CURRENT_PREDICTIONS.md")
     priorities = _roadmap_priorities(repo_root / "ROADMAP.md")
     inventory = _local_inventory(repo_root, artifacts_root)
@@ -334,8 +423,7 @@ trust live Git output after checkout.
 
 {model_text}
 
-The 52.05% figure is historical forced-pick ATS classification accuracy, not a
-game-specific probability and not proof of a profitable or stable market edge.
+{accuracy_disclaimer}
 
 ## Last tracked weekly publication
 
@@ -361,9 +449,6 @@ must not be silently removed or retuned away.
 ```powershell
 # Manual diagnostic/recovery only; the agent and Git hooks own normal refreshes
 .\\.tools\\uv.exe run nfl-ats handoff --check
-
-# Launch the local dashboard
-.\\.tools\\uv.exe run nfl-ats dashboard
 
 # Quality gates
 .\\.tools\\uv.exe run ruff format --check .
@@ -404,8 +489,16 @@ def write_session_handoff(
     *,
     generated_at: datetime | None = None,
     state: RepositoryState | None = None,
+    registry_root: Path | None = None,
 ) -> dict[str, Any]:
-    """Inspect current state and atomically refresh the tracked handoff."""
+    """Inspect current state and atomically refresh the tracked handoff.
+
+    Also refreshes the README's own generated state blocks (see
+    ``nfl_ats.readme_state``) when a README exists at the repo root -- the
+    tracked pre-commit hook already runs this command and stages HANDOFF.md
+    before every commit, so wiring the README refresh here extends that same
+    protection instead of requiring a second hook.
+    """
 
     root = repo_root.resolve()
     git_state = state or inspect_repository(root)
@@ -418,4 +511,12 @@ def write_session_handoff(
     output = destination if destination.is_absolute() else root / destination
     atomic_text(markdown, output)
     result["destination"] = str(output)
+
+    readme_path = root / "README.md"
+    if readme_path.is_file():
+        result["readme"] = regenerate_readme_state(
+            artifacts_root.resolve(),
+            registry_root if registry_root is not None else root / "registry",
+            readme_path,
+        )
     return result

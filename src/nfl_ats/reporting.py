@@ -9,9 +9,21 @@ from typing import Any, Literal
 import numpy as np
 import pandas as pd
 
+from nfl_ats.estimation_variance import MIN_BLOCKS_FOR_INTERVAL, OnDegenerate, guard_block_count
 from nfl_ats.odds import settle_bet
 
 BootstrapBlock = Literal["week", "season"]
+
+# Explicit status markers for the optional CLV columns of ``season_scorecard``.
+# A missing market-capture archive is DATA, not a silent NaN: every row of a
+# scorecard carries ``clv_status`` so a reader can always tell whether
+# ``clv_points`` was measured against the point-in-time archive or could not
+# be computed at all (and why).
+CLV_STATUS_MEASURED = "measured"
+CLV_STATUS_CAPTURE_UNAVAILABLE = "capture_unavailable"
+CLV_STATUS_NO_PAIRED_GAMES = "no_paired_games"
+
+_CLV_SCORECARD_COLUMNS = ("clv_points", "clv_status", "clv_games")
 
 
 def _expected_calibration_error(
@@ -102,7 +114,99 @@ def calibration_table(predictions: pd.DataFrame, bins: int = 10) -> pd.DataFrame
     return table
 
 
-def season_scorecard(predictions: pd.DataFrame) -> pd.DataFrame:
+def _clv_per_season(
+    predictions: pd.DataFrame,
+    evaluated: pd.DataFrame,
+    *,
+    market_capture_root: Path | None,
+    decision_label: str,
+) -> tuple[dict[Any, float], dict[Any, str], dict[Any, int]]:
+    """Per-season mean signed CLV via the real market-capture pipeline.
+
+    Uses :func:`nfl_ats.clv.build_pairing_table` (against the point-in-time
+    capture ARCHIVE directory), :func:`nfl_ats.clv.close_reference_table`,
+    and :func:`nfl_ats.clv.score_clv` exactly as that module documents them.
+    The pick side is the model's own forced pick implied by
+    ``home_cover_probability >= 0.5``; the decision line is read at
+    ``decision_label``.
+
+    Missing capture data is never reported as a bare NaN: when no archive is
+    supplied or found, every season gets ``capture_unavailable``; when an
+    archive exists but pairs none of a season's games, that season gets
+    ``no_paired_games``. Both statuses travel with the row so partial archive
+    coverage stays visible instead of collapsing into NaN.
+
+    Raises ``nfl_ats.data.DataContractError`` if ``predictions`` lacks the
+    columns the clv pipeline contracts require (``game_id``/``season``/
+    ``week``/``spread_line``); that is a caller contract error, not missing
+    capture data, and is reported as an exception rather than a marker.
+    """
+
+    seasons = list(evaluated["season"].unique())
+    unavailable_points = {season: float("nan") for season in seasons}
+    zero_games = dict.fromkeys(seasons, 0)
+    if market_capture_root is None or not Path(market_capture_root).is_dir():
+        return (
+            unavailable_points,
+            dict.fromkeys(seasons, CLV_STATUS_CAPTURE_UNAVAILABLE),
+            zero_games,
+        )
+    # Imported lazily and deliberately: nfl_ats.clv imports nfl_ats.active_model,
+    # which imports this module -- a top-level import here would be circular.
+    from nfl_ats.clv import (
+        CLOSE_LABEL_PRIORITY,
+        build_pairing_table,
+        close_reference_table,
+        score_clv,
+    )
+    from nfl_ats.odds_backfill import HISTORICAL_CAPTURE_KIND
+
+    schedule = predictions.drop_duplicates("game_id")
+    pairing = build_pairing_table(
+        Path(market_capture_root),
+        capture_kind=HISTORICAL_CAPTURE_KIND,
+        labels=(decision_label, *CLOSE_LABEL_PRIORITY),
+        seasons=[int(season) for season in seasons],
+        schedule=schedule,
+    )
+    if pairing.empty:
+        return (
+            unavailable_points,
+            dict.fromkeys(seasons, CLV_STATUS_NO_PAIRED_GAMES),
+            zero_games,
+        )
+    close_reference = close_reference_table(pairing, schedule)
+    picks = evaluated[["game_id", "season", "week", "home_cover_probability"]].copy()
+    picks["side"] = np.where(picks.pop("home_cover_probability").ge(0.5), "HOME", "AWAY")
+    picks["decision_label"] = decision_label
+    scored = score_clv(picks, pairing, close_reference)
+    scored = scored.loc[scored["clv_points"].notna()]
+    counts = (
+        scored.groupby("season")["clv_points"].agg(["size", "mean"])
+        if not scored.empty
+        else pd.DataFrame(columns=["size", "mean"])
+    )
+    points: dict[Any, float] = {}
+    statuses: dict[Any, str] = {}
+    games: dict[Any, int] = {}
+    for season in seasons:
+        if season in counts.index and int(counts.loc[season, "size"]) > 0:
+            points[season] = float(counts.loc[season, "mean"])
+            statuses[season] = CLV_STATUS_MEASURED
+            games[season] = int(counts.loc[season, "size"])
+        else:
+            points[season] = float("nan")
+            statuses[season] = CLV_STATUS_NO_PAIRED_GAMES
+            games[season] = 0
+    return points, statuses, games
+
+
+def season_scorecard(
+    predictions: pd.DataFrame,
+    *,
+    market_capture_root: Path | None = None,
+    clv_decision_label: str = "tue_open",
+) -> pd.DataFrame:
     evaluated = predictions.loc[predictions["home_cover"].notna()].copy()
     if evaluated.empty:
         return pd.DataFrame(
@@ -113,6 +217,7 @@ def season_scorecard(predictions: pd.DataFrame) -> pd.DataFrame:
                 "brier_score",
                 "log_loss",
                 "expected_calibration_error",
+                *_CLV_SCORECARD_COLUMNS,
             ]
         )
     evaluated["correct"] = (
@@ -143,6 +248,15 @@ def season_scorecard(predictions: pd.DataFrame) -> pd.DataFrame:
         for season, group in evaluated.groupby("season", sort=False)
     }
     scorecard["expected_calibration_error"] = scorecard["season"].map(calibration)
+    clv_points, clv_statuses, clv_games = _clv_per_season(
+        predictions,
+        evaluated,
+        market_capture_root=market_capture_root,
+        decision_label=clv_decision_label,
+    )
+    scorecard["clv_points"] = scorecard["season"].map(clv_points)
+    scorecard["clv_status"] = scorecard["season"].map(clv_statuses)
+    scorecard["clv_games"] = scorecard["season"].map(clv_games).astype(int)
     if {"bet_side", "bet_odds"}.issubset(predictions.columns):
         wagered = predictions.loc[predictions["bet_side"].ne("PASS")].copy()
         wagered["profit_units"] = wagered.apply(_realized_profit, axis=1)
@@ -171,16 +285,32 @@ def season_scorecard(predictions: pd.DataFrame) -> pd.DataFrame:
 def block_bootstrap_intervals(
     predictions: pd.DataFrame,
     *,
-    samples: int = 2_000,
+    # See paired_feature_comparisons: 2,000 leaves ~6-7% of the reported SE as
+    # the bootstrap's own noise, which is enough to flip a threshold-adjacent
+    # verdict between seeds. 20,000 is ~5x quieter and effectively free.
+    samples: int = 20_000,
     confidence: float = 0.95,
     block: BootstrapBlock = "week",
     seed: int = 20260812,
+    # D4 guard. Default 'warn' + a flagged output column, never 'raise':
+    # refusing would change what existing call sites return, and the point is
+    # that the flag TRAVELS with the number into the CSV a registry entry cites.
+    # A caller that is about to record a verdict should pass 'raise'.
+    on_degenerate: OnDegenerate = "warn",
+    min_blocks: int = MIN_BLOCKS_FOR_INTERVAL,
 ) -> pd.DataFrame:
     """Estimate metric uncertainty by resampling whole NFL weeks or seasons.
 
     Games within a block stay together, preserving much more of the schedule
     dependence than an ordinary row bootstrap. The interval is descriptive of
     this historical sample; it is not a guarantee about a future season.
+
+    Every row carries ``blocks`` and ``degenerate_blocks``. Below the measured
+    floor (``estimation_variance.MIN_BLOCKS_FOR_INTERVAL``) the percentile
+    bootstrap's coverage is nowhere near nominal, so ``lower``/``upper`` on a
+    flagged row are not a 95% interval and must not be read as one; report
+    ``estimate`` instead. See ``experiments.paired_feature_comparisons`` for
+    the same guard on paired deltas.
     """
 
     if samples < 10:
@@ -197,7 +327,17 @@ def block_bootstrap_intervals(
         raise ValueError(f"Predictions are missing bootstrap columns: {', '.join(missing)}")
     if predictions.loc[predictions["home_cover"].notna()].empty:
         return pd.DataFrame(
-            columns=["metric", "estimate", "lower", "upper", "confidence", "block", "samples"]
+            columns=[
+                "metric",
+                "estimate",
+                "lower",
+                "upper",
+                "confidence",
+                "block",
+                "samples",
+                "blocks",
+                "degenerate_blocks",
+            ]
         )
 
     group_columns = ["season", "week"] if block == "week" else ["season"]
@@ -206,6 +346,12 @@ def block_bootstrap_intervals(
     )
     if not grouped_indices:
         raise ValueError("Predictions contain no bootstrap blocks")
+    block_verdict = guard_block_count(
+        len(grouped_indices),
+        min_blocks=min_blocks,
+        on_degenerate=on_degenerate,
+        context=f"block_bootstrap_intervals(block={block})",
+    )
 
     estimate = _evaluation_metrics(predictions)
     metric_names = list(estimate)
@@ -229,6 +375,10 @@ def block_bootstrap_intervals(
             "confidence": confidence,
             "block": block,
             "samples": samples,
+            "blocks": block_verdict.block_count,
+            # True => lower/upper are NOT a valid interval at this block
+            # count. See the docstring; do not render as one.
+            "degenerate_blocks": block_verdict.degenerate,
         }
     )
 

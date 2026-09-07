@@ -55,12 +55,28 @@ zero of eight outer seasons. The ridge/SRS candidate was chosen three times,
 but its pooled Brier improvement was only 0.000013 with a season-blocked
 interval of [-0.000193, 0.000209]. Neither is promoted to a default feature set.
 
+> **Provenance warning (added 2026-08-22).** The artifact behind the
+> PageRank/HITS numbers above does not survive: no graph or PageRank output
+> exists under `artifacts/` or in any commit, and no dedicated doc holds the
+> underlying per-season results — these figures are prose-only and are not
+> recomputable under current window constraints (no re-run available for
+> 2018–2025 without a frozen predeclaration). They are recorded as
+> `graph_schedule_rating_brier` in `registry/weak_signals.json` with
+> classification `unresolved_below_power` and `probability_positive` ≈ 0.028:
+> a consistent directional lean across replications, not a resolved
+> refutation, and not resolved evidence of either sign. See
+> `docs/closure_audit.md` §3 and the open-defect section of
+> `docs/revisit_list.md`. Cite this entry, not the bare numbers.
+
 The graph profile also failed the 2018–2025 outcome-model comparison. Relative
 to the corrected base features, fair-margin cover Brier worsened from 0.25745
 to 0.25970 and MAE from 10.148 to 10.158 points. Market-residual cover Brier
 worsened from 0.25208 to 0.25398 and MAE from 9.905 to 9.937. Cover Brier was
 worse in seven of eight fair-margin seasons and six of eight residual seasons.
-This rules out default promotion for the current graph formulation.
+On the surviving prose record this rules out default promotion for the
+current graph formulation; per `docs/closure_audit.md` §3 that record rests
+on a consistent lean under selection and season sign counts, not on a
+resolved interval, and its underlying artifact is unrecoverable.
 
 ### Opponent-adjusted play-by-play
 
@@ -103,6 +119,16 @@ burden, lineup/roster continuity, and value-weighted injury burden. All snap
 shares and weekly production are outcomes: a game updates those states only
 after its prediction row is emitted. Injury rows are filtered to the latest
 observation available at the 24-hour decision cutoff.
+
+Roster continuity has two point-in-time shapes. The established
+`player_continuity` family compares the two latest completed snap lineups and
+the two latest strictly earlier weekly rosters. The isolated
+`roster_returning_snaps` family measures the prior season's offense, defense,
+and special-teams snap mass carried by players on the latest safely observable
+current-season roster. Weekly roster rows have no observation timestamps, so
+the builder delays them one week and emits missing values in Week 1 rather
+than using hindsight. The returning-snap family is registered but is absent
+from every existing feature profile; see `docs/roster_continuity.md`.
 
 The v2 value proxy uses a span-16 exponentially weighted state. Non-QB rushing
 plus receiving EPA supplies a low-dimensional offensive skill value; tackles
@@ -386,6 +412,21 @@ validation seasons. Repeatedly tuning against final reported seasons makes them
 de facto validation data and biases the apparent final-test result upward. It
 does not literally place their labels in an estimator's training matrix.
 
+The August 2026 sensitivity-aware review formalized this with a multiplicity
+ledger: on the order of 130–150 candidate prediction streams have been scored
+against the 2018–2025 outcomes, so the best pooled numbers there are what
+selection on noise plus a possibly small real effect would produce. Untouched
+pre-2018 windows were then spent on frozen, predeclared replications: the
+raw-PBP market-residual bundle scored −0.08 points against base on 1,247
+never-selected-on 2013–2017 games (its post-hoc 2018–2025 comparison had shown
++1.69), and the declared QB-plus-continuity alpha-1 candidate scored exactly
++0.00 points on 997 games in 2014–2017 with all probability diagnostics worse.
+Both families are closed, both windows are declared spent, and new evidence for
+any existing family must come from prospective 2026 outcomes or cross-league
+replication rather than another 2018–2025 screen. Replication artifacts,
+including predeclaration copies, live under `artifacts/pbp_replication/` and
+`artifacts/qb_continuity_replication/`.
+
 Each new backtest writes JSON and Markdown model cards containing intended use,
 out-of-scope uses, the evaluation period, season-level calibration history,
 known limitations, and exact provenance.
@@ -409,8 +450,11 @@ not support promoting the current PBP family as a profitable model.
 Opponent adjustment was subsequently implemented and evaluated rather than
 left as a proposed explanation. Its direct-ATS probability change was small
 and unresolved, while fair-margin, market-residual, and straight-up error all
-worsened. The next PBP work therefore focuses on drive/possession state and
-feature compression, not tuning this result against the same test seasons.
+worsened. The 2013–2017 market-residual replication then closed the raw PBP
+bundle outright (−0.08 points versus base with margin error resolved worse),
+so remaining PBP value, if any, lies in compressed low-dimensional mechanisms
+chosen on CFB data or in joint score/pace distributions — not in re-screening
+the 48-column bundle.
 
 The completed drive layer adds 12 offense/defense possession states (36 model
 columns): points, yards, plays, elapsed seconds, scoring rate, and turnover
@@ -430,6 +474,18 @@ no more than 14 days old. Actual historical starters are outcomes and are not a
 fallback. Current timestamped depth data provides too little history for a
 credible model comparison, so QB columns remain prospective enrichment rather
 than promoted model inputs.
+
+PER-02's completed construction path now retains both named QB1 and QB2 from
+that same depth observation, applies the existing fixed or season-lagged
+starter-availability probability, and mixes their strictly prior EPA/dropback
+and CPOE states. It exposes the named backup's state and QB2-minus-QB1
+adjustment instead of substituting a generic replacement value. Uncovered
+injury seasons, stale depth, and missing player histories stay null and carry
+auditable source/timestamp fields. Its `depth_qb_*` namespace keeps these
+depth-derived semantics distinct from `player_qb`'s prior-appearance
+projection, while both reuse the same availability resolver. The new
+`quarterback_depth` family is registered but absent from every model profile; see
+`docs/quarterback_state_features.md` for the complete contract and build path.
 
 ## Paper sizing and simulation
 

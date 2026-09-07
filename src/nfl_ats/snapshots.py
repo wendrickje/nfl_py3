@@ -116,7 +116,14 @@ def snapshot_from_root(root: Path) -> Snapshot:
 
 
 def latest_snapshot(raw_root: Path) -> Snapshot:
-    candidates = sorted(path for path in raw_root.glob("*") if (path / "manifest.json").is_file())
+    # data/raw also hosts named source directories (injury_news, officials, ...) whose
+    # own manifests must never be mistaken for a schedules snapshot, so a candidate
+    # must carry the snapshot payload itself, not just a manifest.json.
+    candidates = sorted(
+        path
+        for path in raw_root.glob("*")
+        if (path / "manifest.json").is_file() and (path / "schedules.parquet").is_file()
+    )
     if not candidates:
         raise FileNotFoundError(f"No complete snapshots found under {raw_root}")
     return snapshot_from_root(candidates[-1])
@@ -126,6 +133,34 @@ def load_snapshot(snapshot: Snapshot) -> tuple[pd.DataFrame, pd.DataFrame]:
     if not snapshot.manifest_path.is_file():
         raise FileNotFoundError(f"Incomplete snapshot: {snapshot.root}")
     return pd.read_parquet(snapshot.schedules_path), pd.read_parquet(snapshot.team_stats_path)
+
+
+def load_verified_snapshot(snapshot: Snapshot) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load a snapshot only when its manifest still matches both payloads."""
+
+    if not snapshot.manifest_path.is_file():
+        raise FileNotFoundError(f"Incomplete snapshot: {snapshot.root}")
+    payload = json.loads(snapshot.manifest_path.read_text(encoding="utf-8"))
+    if str(payload.get("snapshot_id")) != snapshot.snapshot_id:
+        raise ValueError(f"Snapshot manifest identity mismatch: {snapshot.root}")
+    files = payload.get("files")
+    if not isinstance(files, dict):
+        raise ValueError(f"Snapshot manifest has no file provenance: {snapshot.root}")
+    frames: list[pd.DataFrame] = []
+    for name, path in (
+        ("schedules.parquet", snapshot.schedules_path),
+        ("team_stats.parquet", snapshot.team_stats_path),
+    ):
+        declared = files.get(name)
+        if not isinstance(declared, dict):
+            raise ValueError(f"Snapshot manifest omits {name}: {snapshot.root}")
+        if not path.is_file() or _sha256(path) != str(declared.get("sha256")):
+            raise ValueError(f"Snapshot payload hash mismatch for {name}: {snapshot.root}")
+        frame = pd.read_parquet(path)
+        if len(frame) != int(declared.get("rows", -1)):
+            raise ValueError(f"Snapshot payload row-count mismatch for {name}: {snapshot.root}")
+        frames.append(frame)
+    return frames[0], frames[1]
 
 
 def describe_snapshot(snapshot: Snapshot) -> dict[str, Any]:
