@@ -9,6 +9,7 @@ frozen.
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -17,12 +18,15 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from nfl_ats.artifact_contracts import CompatibilityReport
 from nfl_ats.calibration import COVER_CALIBRATION_METHODS
+from nfl_ats.lineage import CardLineage, LineageError, validate_card_lineage
 from nfl_ats.odds import choose_bet, market_hold, no_vig_probabilities
 
 PREDICTION_SAFETY_VERSION = 1
 VALID_BET_SIDES = frozenset(("HOME", "AWAY", "PASS"))
 VALID_PICKS = frozenset(("HOME", "AWAY"))
+VALID_GAME_TYPES = frozenset(("REG", "WC", "DIV", "CON", "SB"))
 
 
 class PredictionSafetyError(ValueError):
@@ -48,6 +52,89 @@ class PredictionSafetyAudit:
 
 def _fail(check: str, message: str) -> None:
     raise PredictionSafetyError(f"Prediction safety check {check!r} failed: {message}")
+
+
+def _lineage_checks(
+    lineage: CardLineage | None,
+    *,
+    prediction_timestamp: datetime | None,
+) -> list[str]:
+    """ENG-16: a card whose decisions cannot name their source is not publishable.
+
+    Additive to every check above -- passing no ``lineage`` leaves the
+    pre-existing contract exactly as it was, so historical artifacts and
+    callers that predate lineage keep validating unchanged.  When lineage IS
+    supplied it is release-blocking on the same footing as the market and
+    decision math: :func:`nfl_ats.lineage.validate_card_lineage` names every
+    offending field, including any record whose ``effective_timestamp`` sits
+    after the prediction timestamp (the pregame-information invariant restated
+    where an artifact can be audited without rerunning the builder).
+    """
+
+    if lineage is None:
+        return []
+    try:
+        return list(validate_card_lineage(lineage, prediction_timestamp=prediction_timestamp))
+    except LineageError as error:
+        _fail("lineage", str(error))
+        raise  # pragma: no cover - _fail always raises
+
+
+def validate_prediction_lineage(
+    lineage: CardLineage,
+    *,
+    prediction_timestamp: datetime | None = None,
+) -> PredictionSafetyAudit:
+    """Validate a card's lineage on its own, without the prediction frame."""
+
+    checks = _lineage_checks(lineage, prediction_timestamp=prediction_timestamp)
+    return PredictionSafetyAudit(
+        version=PREDICTION_SAFETY_VERSION,
+        status="PASS",
+        card_type="lineage",
+        rows=len(lineage.entries),
+        games=0,
+        checks_passed=tuple(checks),
+        warnings=(),
+    )
+
+
+def _contract_checks(compatibility: CompatibilityReport | None) -> tuple[list[str], list[str]]:
+    """ENG-09: a card built on an artifact-version mismatch is not publishable.
+
+    Additive on the same footing as :func:`_lineage_checks`: passing no
+    ``compatibility`` leaves the pre-existing contract exactly as it was.
+    When a report IS supplied, its ``legacy_unversioned`` issues (either
+    artifact predates ``nfl_ats.artifact_contracts``) are reported as
+    warnings -- never a reason to fail -- while a genuine ``version_mismatch``
+    or ``unknown_forecast_schema`` hard failure blocks the card, matching
+    :func:`nfl_ats.artifact_contracts.CompatibilityReport.refuse_if_incompatible`.
+    """
+
+    if compatibility is None:
+        return [], []
+    if compatibility.hard_failures:
+        detail = "; ".join(
+            f"{issue.code}: {issue.message}" for issue in compatibility.hard_failures
+        )
+        _fail("artifact_contract", detail)
+    warnings = [f"{issue.code}: {issue.message}" for issue in compatibility.warnings]
+    return ["artifact_contract"], warnings
+
+
+def validate_prediction_compatibility(compatibility: CompatibilityReport) -> PredictionSafetyAudit:
+    """Validate an artifact-contract compatibility report on its own."""
+
+    checks, warnings = _contract_checks(compatibility)
+    return PredictionSafetyAudit(
+        version=PREDICTION_SAFETY_VERSION,
+        status="PASS_WITH_WARNINGS" if warnings else "PASS",
+        card_type="artifact_contract",
+        rows=len(compatibility.issues),
+        games=0,
+        checks_passed=tuple(checks),
+        warnings=tuple(warnings),
+    )
 
 
 def _require_columns(frame: pd.DataFrame, columns: Iterable[str], card_type: str) -> None:
@@ -106,6 +193,16 @@ def _validate_identity_and_cutoff(
         _fail("card_scope", f"rows do not all belong to expected season {expected_season}")
     if expected_week is not None and not weeks.eq(expected_week).all():
         _fail("card_scope", f"rows do not all belong to expected week {expected_week}")
+    if "game_type" in frame:
+        game_types = frame["game_type"].astype("string").str.strip()
+        unknown = sorted(set(game_types.dropna()).difference(VALID_GAME_TYPES))
+        if game_types.isna().any() or unknown:
+            _fail("card_scope", f"unrecognized game_type values: {unknown or ['<missing>']}")
+        if game_types.nunique() != 1:
+            _fail(
+                "card_scope",
+                "a weekly card must contain exactly one game type (one postseason round)",
+            )
     checks.append("card_scope")
 
     gamedays = pd.to_datetime(frame["gameday"], errors="coerce")
@@ -155,6 +252,65 @@ def _validate_market_inputs(
         )
     checks.append("market_inputs")
     return checks, warnings
+
+
+def validate_three_way_split(
+    frame: pd.DataFrame,
+    *,
+    line_column: str = "spread_line",
+    tolerance: float = 1e-6,
+) -> tuple[str, ...]:
+    """Validate a cover/push/loss decomposition of a margin predictive distribution.
+
+    Independent of the full outcome-card schema so it can also guard
+    single-method cards scored at externally supplied lines (see
+    ``nfl_ats.lines``). Fails closed: every probability must be finite and in
+    [0, 1], the three must sum to one within ``tolerance``, and push
+    probability must be exactly zero wherever the line is not an integer --
+    a real football margin can never push a half-point line.
+    """
+
+    required = (
+        "home_cover_probability_excluding_push",
+        "push_probability",
+        "home_loss_probability",
+        line_column,
+    )
+    _require_columns(frame, required, "three-way split")
+    if frame.empty:
+        return ("three_way_probabilities", "three_way_sum", "push_half_point")
+
+    numeric = {
+        name: pd.to_numeric(frame[name], errors="coerce")
+        for name in (
+            "home_cover_probability_excluding_push",
+            "push_probability",
+            "home_loss_probability",
+        )
+    }
+    for name, values in numeric.items():
+        if values.isna().any() or not np.isfinite(values.to_numpy(dtype=float)).all():
+            _fail("three_way_probabilities", f"{name} must be finite")
+        if not values.between(0.0, 1.0, inclusive="both").all():
+            _fail("three_way_probabilities", f"{name} must lie in [0, 1]")
+
+    total = (
+        numeric["home_cover_probability_excluding_push"]
+        + numeric["push_probability"]
+        + numeric["home_loss_probability"]
+    )
+    if not np.isclose(total.to_numpy(dtype=float), 1.0, atol=tolerance, rtol=0.0).all():
+        _fail("three_way_sum", "cover/push/loss probabilities must sum to one")
+
+    line = pd.to_numeric(frame[line_column], errors="coerce")
+    if line.isna().any() or not np.isfinite(line.to_numpy(dtype=float)).all():
+        _fail("three_way_probabilities", f"{line_column} must be finite")
+    half_point = np.isclose(np.mod(line.to_numpy(dtype=float), 1.0), 0.5, atol=1e-9)
+    push = numeric["push_probability"].to_numpy(dtype=float)
+    if half_point.any() and not np.isclose(push[half_point], 0.0, atol=tolerance).all():
+        _fail("push_half_point", "push probability must be zero at a half-point line")
+
+    return ("three_way_probabilities", "three_way_sum", "push_half_point")
 
 
 def _validate_decisions(frame: pd.DataFrame, min_edge: float) -> tuple[str, ...]:
@@ -278,6 +434,87 @@ def _feature_checks(
     return ["model_inputs"], warnings
 
 
+#: ENG-39: matches the injury MAGNITUDE sub-block
+#: ``nfl_ats.players.enrich_with_player_features`` writes -- ``home_injury_*``,
+#: ``away_injury_*``, ``diff_injury_*`` -- but excludes the lineage metadata
+#: columns of the same prefix, ``{side}_injury_observed_at`` and
+#: ``{side}_injury_observed_at_basis`` (ENG-23/ENG-39). Those are timestamps
+#: and provenance labels, not model inputs: ``pd.to_numeric`` silently turns
+#: a tz-aware timestamp into a large nonzero int64 (nanosecond epoch)
+#: instead of raising or returning null, which would make a real
+#: all-zero magnitude block look nonzero and defeat this check entirely.
+_INJURY_FEATURE_COLUMN_PATTERN = re.compile(r"^(?:home_|away_|diff_)injury_(?!observed_at)")
+
+
+def _injury_feature_checks(
+    frame: pd.DataFrame,
+    feature_columns: Sequence[str] | None,
+    *,
+    allow_empty_injury_block: bool = False,
+    empty_injury_block_reason: str | None = None,
+) -> tuple[list[str], list[str]]:
+    """ENG-39: catch a silently all-zero injury feature block before publish.
+
+    nflverse's 2025 injuries release drops ``date_modified`` entirely, and
+    the historical (default) canonicalization response is to drop every row
+    without one -- so a whole card's ``home_/away_/diff_injury_*`` block can
+    come out exactly 0.0/null for every row while every other prediction
+    safety check still passes (measured: ``docs/injury_timestamp_fallback.md``,
+    M3). This scans the injury sub-block directly off the card -- restricted
+    to ``feature_columns`` when the caller supplies one (as
+    ``validate_prediction_card`` does), else discovered from the card's own
+    columns (as ``validate_outcome_prediction_card`` does, since it has no
+    ``feature_columns`` parameter) -- and fails loudly on that exact failure
+    mode instead of silently shipping a zeroed injury component.
+    ``allow_empty_injury_block`` is the blind escape; no production caller
+    sets it. ``empty_injury_block_reason`` (2026-09-07) is the EVIDENCED one:
+    the caller has verified that the week's injury reports do not exist yet
+    in the player snapshot (``nfl_ats.players.injury_reports_absent_reason``),
+    so an all-zero block is absence of reports, not a pipeline defect -- the
+    check passes and the reason is recorded verbatim as a warning the card
+    surfaces. Measured 2026-09-07: the 2026 Week 1 lock on Monday precedes
+    the league's first Wednesday report, so without this every Week 1
+    scoring would fail here by construction.
+    """
+
+    if frame.empty:
+        return [], []
+    candidates = feature_columns if feature_columns else list(frame.columns)
+    injury_columns = [
+        column
+        for column in candidates
+        if column in frame.columns and _INJURY_FEATURE_COLUMN_PATTERN.match(column)
+    ]
+    if not injury_columns:
+        return [], []
+    values = frame.loc[:, injury_columns].apply(pd.to_numeric, errors="coerce")
+    null_or_zero = values.isna() | values.eq(0.0)
+    fraction = float(null_or_zero.to_numpy().mean())
+    if bool(null_or_zero.to_numpy().all()):
+        if empty_injury_block_reason:
+            return ["injury_feature_presence"], [
+                f"injury feature block is entirely null/zero across {len(injury_columns)} "
+                f"column(s): {empty_injury_block_reason}"
+            ]
+        if not allow_empty_injury_block:
+            _fail(
+                "injury_feature_presence",
+                f"every value across {len(injury_columns)} injury feature column(s) is "
+                "null or exactly 0.0 -- see docs/injury_timestamp_fallback.md",
+            )
+        return ["injury_feature_presence"], [
+            f"injury feature block is entirely null/zero across {len(injury_columns)} "
+            "column(s); allow_empty_injury_block=True suppressed the failure"
+        ]
+    warnings: list[str] = []
+    if fraction > 0.5:
+        warnings.append(
+            f"{fraction:.0%} of injury feature values are null or exactly 0.0 across "
+            f"{len(injury_columns)} column(s)"
+        )
+    return ["injury_feature_presence"], warnings
+
+
 def validate_prediction_card(
     predictions: pd.DataFrame,
     *,
@@ -287,8 +524,18 @@ def validate_prediction_card(
     feature_columns: Sequence[str] | None = None,
     prospective: bool = False,
     created_at: datetime | None = None,
+    lineage: CardLineage | None = None,
+    compatibility: CompatibilityReport | None = None,
+    allow_empty_injury_block: bool = False,
+    empty_injury_block_reason: str | None = None,
 ) -> PredictionSafetyAudit:
-    """Validate a direct ATS card and independently recompute its decisions."""
+    """Validate a direct ATS card and independently recompute its decisions.
+
+    ``allow_empty_injury_block`` (ENG-39, default ``False``): a prospective
+    card whose injury feature sub-block is entirely null/zero fails the new
+    ``injury_feature_presence`` check (see ``_injury_feature_checks``) unless
+    this is explicitly set. No production caller sets it.
+    """
 
     required = (
         "game_id",
@@ -335,6 +582,19 @@ def validate_prediction_card(
         )
         checks.extend(timing_checks)
         warnings.extend(timing_warnings)
+    if prospective and len(predictions) >= 1:
+        injury_checks, injury_warnings = _injury_feature_checks(
+            predictions,
+            feature_columns,
+            allow_empty_injury_block=allow_empty_injury_block,
+            empty_injury_block_reason=empty_injury_block_reason,
+        )
+        checks.extend(injury_checks)
+        warnings.extend(injury_warnings)
+    checks.extend(_lineage_checks(lineage, prediction_timestamp=created_at))
+    contract_checks, contract_warnings = _contract_checks(compatibility)
+    checks.extend(contract_checks)
+    warnings.extend(contract_warnings)
     status = "PASS_WITH_WARNINGS" if warnings else "PASS"
     return PredictionSafetyAudit(
         version=PREDICTION_SAFETY_VERSION,
@@ -354,8 +614,28 @@ def validate_outcome_prediction_card(
     expected_methods: Sequence[str],
     expected_season: int | None = None,
     expected_week: int | None = None,
+    lineage: CardLineage | None = None,
+    created_at: datetime | None = None,
+    compatibility: CompatibilityReport | None = None,
+    feature_columns: Sequence[str] | None = None,
+    prospective: bool = False,
+    feature_rows: pd.DataFrame | None = None,
+    allow_empty_injury_block: bool = False,
+    empty_injury_block_reason: str | None = None,
 ) -> PredictionSafetyAudit:
-    """Validate the five-method straight-up, margin, and ATS weekly card."""
+    """Validate the five-method straight-up, margin, and ATS weekly card.
+
+    ``feature_columns``, ``prospective``, and ``allow_empty_injury_block``
+    (ENG-39, all additive, defaulting to the pre-ENG-39 behaviour) mirror
+    ``validate_prediction_card``: when ``prospective=True`` and the card is
+    non-empty, the new ``injury_feature_presence`` check (see
+    ``_injury_feature_checks``) fails a card whose injury feature sub-block
+    is entirely null/zero -- restricted to ``feature_columns`` when given,
+    else discovered from the card's own columns -- unless
+    ``allow_empty_injury_block`` is explicitly set. The live margin-predict path
+    passes its actual input feature rows
+    through ``feature_rows`` with ``prospective=True``.
+    """
 
     required = (
         "game_id",
@@ -370,6 +650,9 @@ def validate_outcome_prediction_card(
         "method",
         "home_win_probability",
         "home_cover_probability",
+        "home_cover_probability_excluding_push",
+        "push_probability",
+        "home_loss_probability",
         "predicted_margin",
         "fair_spread",
         "predicted_market_residual",
@@ -451,6 +734,7 @@ def validate_outcome_prediction_card(
     ).all():
         _fail("market_baseline", "market predicted margin does not equal the market spread")
     checks.extend(("margin_distribution", "margin_identity", "market_baseline"))
+    checks.extend(validate_three_way_split(margin_rows))
 
     win_required = predictions["method"].ne("direct_ats")
     cover_required = predictions["method"].ne("straight_up")
@@ -542,6 +826,19 @@ def validate_outcome_prediction_card(
         ):
             _fail("decision_policy", f"decision price is inconsistent for {row['game_id']}")
     checks.append("decision_policy")
+    if prospective and len(predictions) >= 1:
+        injury_checks, injury_warnings = _injury_feature_checks(
+            predictions if feature_rows is None else feature_rows,
+            feature_columns,
+            allow_empty_injury_block=allow_empty_injury_block,
+            empty_injury_block_reason=empty_injury_block_reason,
+        )
+        checks.extend(injury_checks)
+        warnings.extend(injury_warnings)
+    checks.extend(_lineage_checks(lineage, prediction_timestamp=created_at))
+    contract_checks, contract_warnings = _contract_checks(compatibility)
+    checks.extend(contract_checks)
+    warnings.extend(contract_warnings)
     return PredictionSafetyAudit(
         version=PREDICTION_SAFETY_VERSION,
         status="PASS_WITH_WARNINGS" if warnings else "PASS",

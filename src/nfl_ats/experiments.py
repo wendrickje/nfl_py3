@@ -14,7 +14,8 @@ from nfl_ats.calibration import (
     CoverCalibrationMethod,
     calibrate_cover_prediction_stream,
 )
-from nfl_ats.constants import FEATURE_SETS
+from nfl_ats.constants import DEFAULT_MIN_TRAIN_GAMES, FEATURE_SETS
+from nfl_ats.estimation_variance import MIN_BLOCKS_FOR_INTERVAL, OnDegenerate, guard_block_count
 from nfl_ats.margin import MARGIN_FEATURE_PROFILES, MarginFeatureProfile
 from nfl_ats.outcomes import summarize_outcome_method, walk_forward_outcomes
 from nfl_ats.prediction_safety import validate_outcome_prediction_card
@@ -57,6 +58,11 @@ FROZEN_PLAYER_EVALUATION_START_SEASON = 2018
 FROZEN_PLAYER_FIRST_TEST_SEASON = 2020
 FROZEN_PLAYER_VALIDATION_SEASONS = 2
 FROZEN_PLAYER_MIN_CALIBRATION_GAMES = 400
+# Pinned copies of the walk-forward training floor. These deliberately do NOT
+# follow constants.DEFAULT_MIN_TRAIN_GAMES: the value was 500 when each of these
+# predeclared runs was scored, and a later derivation of the live default must
+# not silently change what a recorded artifact would reproduce.
+FROZEN_PLAYER_MIN_TRAIN_GAMES = 500
 
 # Single-candidate participation hypothesis declared on 2026-08-13 before its
 # ATS outcomes were generated. This is intentionally not another search grid.
@@ -64,6 +70,7 @@ FROZEN_PARTICIPATION_BASELINE_PROFILE: MarginFeatureProfile = "player_value"
 FROZEN_PARTICIPATION_CANDIDATE_PROFILE: MarginFeatureProfile = "player_participation"
 FROZEN_PARTICIPATION_START_SEASON = 2018
 FROZEN_PARTICIPATION_RIDGE_ALPHA = 10.0
+FROZEN_PARTICIPATION_MIN_TRAIN_GAMES = 500
 
 # Single learned-availability replacement declared on 2026-08-13 before its
 # ATS outcomes were generated. The probability model is fit on player-game
@@ -71,6 +78,7 @@ FROZEN_PARTICIPATION_RIDGE_ALPHA = 10.0
 FROZEN_AVAILABILITY_PROFILE: MarginFeatureProfile = "player_value"
 FROZEN_AVAILABILITY_START_SEASON = 2018
 FROZEN_AVAILABILITY_RIDGE_ALPHA = 10.0
+FROZEN_AVAILABILITY_MIN_TRAIN_GAMES = 500
 
 PairedBlock = Literal["week", "season"]
 
@@ -134,15 +142,47 @@ def paired_feature_comparisons(
     predictions: pd.DataFrame,
     *,
     baseline_feature_set: str,
-    samples: int = 2_000,
+    # 20,000 rather than 2,000: at 2,000 the bootstrap's OWN Monte-Carlo error
+    # is ~6-7% of the real sampling SE, enough to move a reported interval edge
+    # by 0.03 points between seeds. This project gates decisions on hard
+    # thresholds (0.75 screen, 0.90 promotion), so a seed-dependent verdict near
+    # a gate is a defect, not a rounding detail. 20,000 cuts that jitter ~5x and
+    # costs under three seconds. The MDE80 formula this samples count protects
+    # lives in docs/estimation_variance.md (~line 255), not evaluator_power.md,
+    # which does not exist (`git log --all` has no history for that path).
+    samples: int = 20_000,
     confidence: float = 0.95,
     block: PairedBlock = "week",
     seed: int = 20260812,
+    # D4 guard. Default 'warn' + a flagged output column, never 'raise':
+    # refusing would change what existing call sites return, and the point is
+    # that the flag TRAVELS with the number into the CSV a registry entry cites.
+    # A caller that is about to record a verdict should pass 'raise'.
+    on_degenerate: OnDegenerate = "warn",
+    min_blocks: int = MIN_BLOCKS_FOR_INTERVAL,
 ) -> pd.DataFrame:
     """Block-bootstrap paired per-game improvements over a feature baseline.
 
     Positive estimates mean the candidate is better. Pairing keeps the exact
     same game outcomes in both arms and resamples whole weeks or seasons.
+
+    Every row carries ``blocks`` and ``degenerate_blocks``. Below the measured
+    floor (``estimation_variance.MIN_BLOCKS_FOR_INTERVAL``) the percentile
+    bootstrap's coverage is nowhere near nominal -- ~0.80 at 4 blocks, and at 1
+    block the interval collapses to a point -- so ``lower``/``upper`` on a
+    flagged row are not a 95% interval and must not be read as one. The
+    ``estimate`` and ``probability_positive`` on a flagged row are still the
+    quantities to report.
+
+    **This interval is conditional on one model fit.** Measured on real CFB
+    (``docs/estimation_variance.md`` Part II), the honest refit-aware width is
+    only 1.003x this one -- 95% upper bound 1.099x -- so for comparisons
+    between differently-fitted models the conditional interval is very nearly
+    right, and the previously published "17-58% too narrow" was a
+    double-counted interaction term, not a real understatement. Families that
+    vary the residual READER rather than the fit are a different mechanism and
+    a much larger correction; see that document before assuming this one
+    applies.
     """
 
     if samples < 10:
@@ -199,6 +239,12 @@ def paired_feature_comparisons(
         if block == "season":
             group_columns = ["season_baseline"]
         grouped_indices = list(paired.groupby(group_columns, sort=False).indices.values())
+        block_verdict = guard_block_count(
+            len(grouped_indices),
+            min_blocks=min_blocks,
+            on_degenerate=on_degenerate,
+            context=f"paired_feature_comparisons({candidate_name}, block={block})",
+        )
         generator = np.random.default_rng(seed)
         draws = np.empty((samples, len(improvements.columns)), dtype=float)
         for sample_index in range(samples):
@@ -215,10 +261,19 @@ def paired_feature_comparisons(
                     "estimate": float(improvements[metric].mean()),
                     "lower": float(np.quantile(draws[:, metric_index], tail)),
                     "upper": float(np.quantile(draws[:, metric_index], 1.0 - tail)),
+                    # Continuous evidence, not a binary verdict: the fraction
+                    # of blocked resamples in which the candidate beats the
+                    # baseline. 0.61 means roughly 3:2 odds the improvement
+                    # is real; interval endpoints are convention, this isn't.
+                    "probability_positive": float(np.mean(draws[:, metric_index] > 0.0)),
                     "confidence": confidence,
                     "block": block,
                     "samples": samples,
                     "paired_games": len(paired),
+                    "blocks": block_verdict.block_count,
+                    # True => lower/upper are NOT a valid interval at this
+                    # block count. See the docstring; do not render as one.
+                    "degenerate_blocks": block_verdict.degenerate,
                 }
             )
     return pd.DataFrame(rows)
@@ -231,7 +286,7 @@ def run_outcome_profile_experiment(
     profiles: tuple[str, ...] = DEFAULT_PLAYER_PROFILE_SETS,
     regressor: str = "ridge",
     min_edge: float = 0.02,
-    min_train_games: int = 500,
+    min_train_games: int = DEFAULT_MIN_TRAIN_GAMES,
     ridge_alpha: float = 10.0,
 ) -> OutcomeProfileExperimentResult:
     """Evaluate only the residual-margin method across matched player profiles.
@@ -452,7 +507,7 @@ def run_frozen_player_model_selection(
     features: pd.DataFrame,
     *,
     min_edge: float = 0.02,
-    min_train_games: int = 500,
+    min_train_games: int = FROZEN_PLAYER_MIN_TRAIN_GAMES,
 ) -> PlayerModelSelectionExperimentResult:
     """Run the predeclared player profile, Ridge, and calibration budget.
 
@@ -551,7 +606,7 @@ def run_feature_set_experiment(
     model_name: str = "logistic",
     feature_sets: tuple[str, ...] = DEFAULT_EXPERIMENT_SETS,
     min_edge: float = 0.02,
-    min_train_games: int = 500,
+    min_train_games: int = DEFAULT_MIN_TRAIN_GAMES,
 ) -> ExperimentResult:
     unknown = sorted(set(feature_sets).difference(FEATURE_SETS))
     if unknown:

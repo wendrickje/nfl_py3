@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas as pd
 
+from nfl_ats.artifact_contracts import read_contract
 from nfl_ats.io import atomic_json
 from nfl_ats.reporting import artifact_directories, read_json
 
@@ -27,6 +28,33 @@ def _feature_table_sha256(metadata: dict[str, Any]) -> str | None:
     return str(value) if value is not None else None
 
 
+def _feature_table_contract_fields(metadata: dict[str, Any]) -> dict[str, Any]:
+    """ENG-09: the feature table's own stamped contract, if the manifest has one.
+
+    Additive: read-only, never raises. Returns an empty dict for a feature
+    table built before ``artifact_contracts.stamp()`` existed, so
+    ``check_compatible`` sees the same ``legacy_unversioned`` shape it
+    reports for any other pre-ENG-09 artifact rather than a KeyError.
+    """
+
+    provenance = metadata.get("provenance")
+    if not isinstance(provenance, dict):
+        return {}
+    feature_table = provenance.get("feature_table")
+    if not isinstance(feature_table, dict):
+        return {}
+    manifest = feature_table.get("manifest")
+    if not isinstance(manifest, dict):
+        return {}
+    contract = read_contract(manifest)
+    if contract.legacy:
+        return {}
+    return {
+        "feature_table_schema_version": contract.schema_version,
+        "feature_table_builder_version": contract.builder_version,
+    }
+
+
 def _ridge_alpha(metadata: dict[str, Any]) -> float | None:
     if metadata.get("regressor") != "ridge":
         return None
@@ -37,6 +65,25 @@ def _calibration_method(metadata: dict[str, Any]) -> str:
     return str(metadata.get("calibration_method", "none"))
 
 
+def _probability_method(metadata: dict[str, Any]) -> str:
+    """The residual-distribution probability read (MOD-08, 2026-08-19).
+
+    Defaults to ``"ecdf"`` when absent -- true both for every historical
+    ``margins/`` evaluation directory recorded before this field existed and
+    for the raw empirical CDF those evaluations actually used, so old
+    artifacts keep matching correctly. Part of the model identity so a
+    ``margin-predict`` run's OWN probability method must match the
+    evaluation it activates against: without this, a
+    ``--probability-method ecdf`` forecast (e.g. an incumbent-tracking
+    challenger built the naive way) could silently re-synchronize the active
+    manifest against the pre-promotion evaluation and revert the promotion
+    -- see docs/smooth_cdf_mapping.md and HANDOFF.md item 6 / the "Known
+    divergence" incident this guards against.
+    """
+
+    return str(metadata.get("probability_method", "ecdf"))
+
+
 def _matching_evaluation(
     artifacts_root: Path,
     forecast_metadata: dict[str, Any],
@@ -45,6 +92,7 @@ def _matching_evaluation(
     regressor = forecast_metadata.get("regressor")
     ridge_alpha = _ridge_alpha(forecast_metadata)
     calibration_method = _calibration_method(forecast_metadata)
+    probability_method = _probability_method(forecast_metadata)
     feature_sha256 = _feature_table_sha256(forecast_metadata)
     for directory in artifact_directories(artifacts_root / "margins", "summary.csv"):
         metadata_path = directory / "metadata.json"
@@ -58,6 +106,8 @@ def _matching_evaluation(
         if _ridge_alpha(metadata) != ridge_alpha:
             continue
         if _calibration_method(metadata) != calibration_method:
+            continue
+        if _probability_method(metadata) != probability_method:
             continue
         if _feature_table_sha256(metadata) != feature_sha256:
             continue
@@ -106,6 +156,7 @@ def activate_matching_ats_model(
         "regressor": forecast_metadata.get("regressor"),
         "ridge_alpha": _ridge_alpha(forecast_metadata),
         "calibration_method": _calibration_method(forecast_metadata),
+        "probability_method": _probability_method(forecast_metadata),
         "feature_table_sha256": _feature_table_sha256(forecast_metadata),
         "evaluation_configuration_sha256": evaluation_metadata.get("provenance", {}).get(
             "configuration_sha256"
@@ -125,6 +176,13 @@ def activate_matching_ats_model(
         "model_id": model_id,
         "activated_at_utc": forecast_metadata.get("created_at_utc"),
         **model_identity,
+        # ENG-09: additive record of the feature table's own contract version
+        # at fit time, if the table was stamped -- NOT folded into
+        # model_identity/model_id above, so this never changes the hash an
+        # existing model_id was already computed from. A later
+        # check_compatible() call reads these two keys to detect a feature
+        # table whose builder/schema version has since moved on.
+        **_feature_table_contract_fields(forecast_metadata),
         "historical_evaluation": {
             "artifact": evaluation_relative.as_posix(),
             "accuracy": accuracy,
@@ -136,6 +194,7 @@ def activate_matching_ats_model(
             "artifact": forecast_relative.as_posix(),
             "season": forecast_metadata.get("season"),
             "week": forecast_metadata.get("week"),
+            "game_type": forecast_metadata.get("game_type"),
             "created_at_utc": forecast_metadata.get("created_at_utc"),
         },
     }
@@ -155,6 +214,30 @@ def load_active_ats_model(artifacts_root: Path) -> dict[str, Any] | None:
     return manifest
 
 
+def matching_opener_evaluation(
+    artifacts_root: Path, manifest: dict[str, Any]
+) -> tuple[Path, dict[str, Any]] | None:
+    """Return the newest ``opener_evaluation/`` run matching ``manifest``'s recipe.
+
+    ``active_ats_model.json`` only links a close-graded ``historical_evaluation``
+    (see above); the pool-relevant opener-graded probability-rule accuracy lives
+    in a separate ``opener_evaluation/`` artifact that is not part of the atomic
+    activation manifest and must be located by matching feature profile,
+    regressor, alpha, and target. Shared by ``nfl_ats.handoff`` (session
+    handoff) and ``nfl_ats.readme_state`` (the README's generated active-model
+    block) so both surfaces report the same number from the same lookup.
+    """
+
+    # Local import avoids the public-board / active-model import cycle.
+    from nfl_ats.public_board import load_baseline_measurement
+
+    try:
+        baseline = load_baseline_measurement(artifacts_root, manifest)
+    except ValueError:
+        return None
+    return baseline.directory, dict(baseline.metadata)
+
+
 def active_artifact_path(
     artifacts_root: Path, manifest: dict[str, Any], section: str
 ) -> Path | None:
@@ -170,3 +253,27 @@ def active_artifact_path(
     except ValueError as error:
         raise ValueError(f"Active model artifact escapes artifacts root: {candidate}") from error
     return candidate
+
+
+def active_forecast_season_week(artifacts_root: Path) -> tuple[int, int] | None:
+    """Return ``(season, week)`` of the active model's linked weekly forecast.
+
+    This is the week the late-week ``refresh-picks`` passes operate on: the
+    forecast ``publish-predictions`` locked on Tuesday is the one whose frozen
+    grading lines a refresh re-scores against. ``None`` when there is no
+    synchronized active model or it has no linked forecast, so callers can
+    fail with a message that names the missing piece instead of a bare
+    argparse usage line (the scheduler's 2026-09-06 failure mode).
+    """
+
+    manifest = load_active_ats_model(artifacts_root)
+    if manifest is None:
+        return None
+    forecast = manifest.get("weekly_forecast")
+    if not isinstance(forecast, dict):
+        return None
+    season = forecast.get("season")
+    week = forecast.get("week")
+    if season is None or week is None:
+        return None
+    return int(season), int(week)

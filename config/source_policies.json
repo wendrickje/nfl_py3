@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "internet_archive_vegasinsider": {
+      "risk": "yellow",
+      "terms_url": "https://archive.org/about/terms.php",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "aggregates_only",
+      "conditions": ["research_use_only", "capture_timestamp_required", "no_direct_vegasinsider_fetch"]
+    },
+    "internet_archive_pfr_boxscores": {
+      "risk": "yellow",
+      "terms_url": "https://archive.org/about/terms.php",
+      "terms_reviewed_on": "2026-09-05",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "aggregates_only",
+      "conditions": [
+        "research_use_only",
+        "capture_timestamp_required",
+        "no_direct_pfr_fetch",
+        "polite_crawl_required",
+        "minimum_delay_seconds_8",
+        "contact_user_agent",
+        "exponential_backoff_on_429_5xx_starting_60s",
+        "hard_stop_after_5_consecutive_game_failures"
+      ]
+    },
+    "nfl_com_injuries": {
+      "risk": "red",
+      "terms_url": "https://www.nfl.com/legal/terms/",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": false,
+      "raw_retention": "private_local_existing_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "aggregates_only",
+      "conditions": ["express_written_consent_required_before_new_fetches"]
+    },
+    "nflverse": {
+      "risk": "green",
+      "terms_url": "https://github.com/nflverse/nflverse-data/blob/master/LICENSE",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "allowed_with_attribution",
+      "derived_publication": "allowed_with_attribution",
+      "conditions": ["cc_by_4_attribution_required", "check_upstream_dataset_license"]
+    },
+    "pfr_transactions": {
+      "risk": "yellow",
+      "terms_url": "https://www.profootballrumors.com/",
+      "terms_reviewed_on": "2026-09-03",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "aggregates_only",
+      "conditions": ["research_use_only", "capture_timestamp_required", "minimum_delay_seconds_1", "contact_user_agent", "never_refetch_cached_slug"]
+    },
+    "sbr_odds_archive": {
+      "risk": "yellow",
+      "terms_url": "https://www.sportsbookreviewsonline.com/",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "aggregates_only",
+      "conditions": ["robots_check_required", "no_raw_publication"]
+    },
+    "sec_availability_sheet": {
+      "risk": "yellow",
+      "terms_url": "https://policies.google.com/terms",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "attribution_and_owner_terms_review_required",
+      "conditions": ["published_csv_only", "no_gated_app_access", "minimum_delay_seconds_2"]
+    },
+    "spreadspoke_kaggle": {
+      "risk": "yellow",
+      "terms_url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "license_conditions_apply",
+      "derived_publication": "noncommercial_with_attribution_sharealike",
+      "conditions": ["noncommercial_only", "preserve_license"]
+    },
+    "sportradar_nfl_injuries": {
+      "risk": "yellow",
+      "terms_url": "https://developer.sportradar.com/sportradar-updates/page/terms-and-conditions",
+      "terms_reviewed_on": "2026-09-02",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "aggregates_only",
+      "conditions": [
+        "api_key_required",
+        "trial_internal_testing_and_evaluation_only",
+        "provider_contract_controls_use",
+        "four_hour_cache_ttl"
+      ]
+    },
+    "the_odds_api": {
+      "risk": "green",
+      "terms_url": "https://the-odds-api.com/terms-and-conditions.html",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "allowed",
+      "conditions": ["raw_data_must_not_be_standalone_product", "quota_headers_required"],
+      "quota": {
+        "historical_credits_per_market_region": 10,
+        "historical_minimum_remaining": 600
+      }
+    },
+    "vegasinsider_content": {
+      "risk": "yellow",
+      "terms_url": "https://www.vegasinsider.com/terms-of-use/",
+      "terms_reviewed_on": "2026-08-24",
+      "acquisition_allowed": false,
+      "raw_retention": "private_local_existing_only",
+      "raw_redistribution": "prohibited",
+      "derived_publication": "aggregates_only",
+      "conditions": ["internet_archive_research_copies_only", "no_direct_fetch"]
+    },
+    "wikipedia_coordinator_revisions": {
+      "risk": "green",
+      "terms_url": "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use",
+      "terms_reviewed_on": "2026-09-07",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "license_conditions_apply",
+      "derived_publication": "allowed_with_attribution",
+      "conditions": [
+        "cc_by_sa_4_attribution_sharealike",
+        "revision_timestamp_required_for_historical_observation",
+        "minimum_delay_seconds_1",
+        "contact_user_agent",
+        "serial_requests",
+        "maxlag_5",
+        "stop_on_403_429_5xx",
+        "never_refetch_cached_response"
+      ]
+    },
+    "wikidata_coordinator_claims": {
+      "risk": "green",
+      "terms_url": "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use",
+      "terms_reviewed_on": "2026-09-07",
+      "acquisition_allowed": true,
+      "raw_retention": "private_local_only",
+      "raw_redistribution": "license_conditions_apply",
+      "derived_publication": "allowed_with_attribution",
+      "conditions": [
+        "cc0",
+        "revision_timestamp_required_for_historical_observation",
+        "minimum_delay_seconds_1",
+        "contact_user_agent",
+        "serial_requests",
+        "maxlag_5",
+        "stop_on_403_429_5xx",
+        "never_refetch_cached_response"
+      ]
+    }
+  }
+}

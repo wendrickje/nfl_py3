@@ -1,0 +1,1942 @@
+{
+ "generated_at_utc": "2026-08-26T15:34:54Z",
+ "source_registry_sha256": "b84ec43d79cac2da50bc67b51e1ff50687a35f5912de9e82d91842b1fe764b3b",
+ "summaries": {
+  "altitude_deficit_4000ft": {
+   "category": "environment",
+   "plain_summary": "Visiting team climbs 4,000+ feet in altitude. Back home."
+  },
+  "altitude_deficit_4000ft_division": {
+   "category": "environment",
+   "plain_summary": "Division rival repeats a 4,000-foot elevation trip. Back the visitor."
+  },
+  "altitude_deficit_4000ft_era_2009_2017": {
+   "category": "environment",
+   "plain_summary": "Early-era altitude jump, 2009-2017 seasons only. Fade home."
+  },
+  "altitude_deficit_4000ft_era_2018_2025": {
+   "category": "environment",
+   "plain_summary": "Recent-era altitude jump, 2018-2025 seasons only. Back home."
+  },
+  "attention_battery_attention_gap_dog": {
+   "category": "attention",
+   "plain_summary": "Underdog outdraws the favorite in search interest. Back the favorite."
+  },
+  "attention_battery_attention_gap_favorite": {
+   "category": "attention",
+   "plain_summary": "Favorite outdraws the underdog in search interest. Back the underdog."
+  },
+  "attention_battery_away_hot": {
+   "category": "attention",
+   "plain_summary": "Away team draws unusually heavy search interest. Back home."
+  },
+  "attention_battery_both_cold": {
+   "category": "attention",
+   "plain_summary": "Both teams draw unusually little search interest. Back home."
+  },
+  "attention_battery_both_cold_gdelt_replication": {
+   "category": "attention",
+   "plain_summary": "News coverage of both teams runs unusually light. Back home."
+  },
+  "attention_battery_hot_after_loss": {
+   "category": "attention",
+   "plain_summary": "Home team's search interest spikes after a loss. Back home."
+  },
+  "attention_battery_hot_team_fade": {
+   "category": "attention",
+   "plain_summary": "Home team draws unusually heavy search interest. Fade home."
+  },
+  "attention_followup_both_cold_non_primetime": {
+   "category": "attention",
+   "plain_summary": "Both teams cold, game outside primetime hours. Back home."
+  },
+  "attention_followup_both_cold_small_market": {
+   "category": "attention",
+   "plain_summary": "Two low-search teams from small media markets meet. Back home."
+  },
+  "attention_followup_cold_visitor_only": {
+   "category": "attention",
+   "plain_summary": "Only the visiting team shows little search interest. Back home."
+  },
+  "attention_followup_deep_cold_tilt": {
+   "category": "attention",
+   "plain_summary": "Combined search interest for both teams runs low. Back home."
+  },
+  "best_pick_calibrated_probability_top1": {
+   "category": "modeling",
+   "plain_summary": "Nomination rule: rank picks by confidence, not randomly."
+  },
+  "best_pick_followup_alpha2000_distance": {
+   "category": "modeling",
+   "plain_summary": "Model setting: rank picks with 2,000-strength smoothing applied."
+  },
+  "best_pick_followup_dispersion_gated_smooth_distance": {
+   "category": "modeling",
+   "plain_summary": "Nomination rule: switch ranking method in low-disagreement weeks."
+  },
+  "best_pick_followup_ensemble_distance": {
+   "category": "modeling",
+   "plain_summary": "Nomination rule: average two confidence-ranking methods together."
+  },
+  "best_pick_followup_smooth_cdf_distance": {
+   "category": "modeling",
+   "plain_summary": "Ranking rule: use the newly adopted smoothing method."
+  },
+  "best_pick_key_number_distance_top1": {
+   "category": "modeling",
+   "plain_summary": "Pick rule: rank picks by distance from 3 or 7."
+  },
+  "best_pick_opener_ranker_candidate_prob_distance_vs_live_v2": {
+   "category": "modeling",
+   "plain_summary": "Ranking rule: skip the bookmaker-agreement filter on opener lines."
+  },
+  "best_pick_opener_ranker_candidate_prob_distance_vs_status_quo": {
+   "category": "modeling",
+   "plain_summary": "Confidence rule: rank opener picks by certainty, not baseline gap."
+  },
+  "best_pick_opener_ranker_dispersion_filtered_candidate_vs_live_v2": {
+   "category": "modeling",
+   "plain_summary": "Tiebreak rule: settle nomination ties by market agreement, not order."
+  },
+  "best_pick_opener_ranker_dispersion_filtered_candidate_vs_unfiltered": {
+   "category": "modeling",
+   "plain_summary": "Filter rule: limit nominations to low-disagreement games only."
+  },
+  "best_pick_tiebreak_cfb_stage0_ecdf_gaussian": {
+   "category": "modeling",
+   "plain_summary": "Tiebreak rule: break ties by smoothed confidence, not alphabetically."
+  },
+  "bias_battery_backup_qb_start": {
+   "category": "health",
+   "plain_summary": "Team's usual starting quarterback is out, backup starts. Fade them."
+  },
+  "bias_battery_backup_qb_start_opener": {
+   "category": "health",
+   "plain_summary": "Backup quarterback starts, graded at the opening line. Fade them."
+  },
+  "bias_battery_bad_team_late": {
+   "category": "schedule",
+   "plain_summary": "Out-of-contention team, weeks 11 through 18. Fade them."
+  },
+  "bias_battery_december_weather_dogs": {
+   "category": "environment",
+   "plain_summary": "Cold-weather home underdog, week 14 or later. Fade them."
+  },
+  "bias_battery_division_revenge_game": {
+   "category": "schedule",
+   "plain_summary": "Division rematch after a first-meeting loss. Back them."
+  },
+  "bias_battery_division_revenge_game_opener": {
+   "category": "schedule",
+   "plain_summary": "Division revenge game, graded at the opening line. Back them."
+  },
+  "bias_battery_extra_rest_edge": {
+   "category": "schedule",
+   "plain_summary": "Team has four or more extra rest days. Back them."
+  },
+  "bias_battery_extra_rest_edge_opener": {
+   "category": "schedule",
+   "plain_summary": "Extra-rest team, graded at the opening line. Fade them."
+  },
+  "bias_battery_great_team_late": {
+   "category": "schedule",
+   "plain_summary": "Locked-in top team, weeks 15 through 18. Fade them."
+  },
+  "bias_battery_home_underdog": {
+   "category": "market",
+   "plain_summary": "Home team is getting points as an underdog. Back them."
+  },
+  "bias_battery_home_underdog_opener": {
+   "category": "market",
+   "plain_summary": "Home underdog, graded at the opening line. Back them."
+  },
+  "bias_battery_large_favorite": {
+   "category": "market",
+   "plain_summary": "Team favored by more than 10 points. Fade them."
+  },
+  "bias_battery_marquee_favorite": {
+   "category": "market",
+   "plain_summary": "A marquee favorite like the Cowboys or Packers. Fade them."
+  },
+  "bias_battery_motivation_mismatch": {
+   "category": "schedule",
+   "plain_summary": "Competitive team faces an eliminated late-season opponent. Fade them."
+  },
+  "bias_battery_motivation_mismatch_opener": {
+   "category": "schedule",
+   "plain_summary": "Motivation mismatch, graded at the opening line. Fade them."
+  },
+  "bias_battery_post_blowout_loss_bounce": {
+   "category": "onfield",
+   "plain_summary": "Lost previous game by 17-plus points. Back that team."
+  },
+  "bias_battery_post_blowout_win_letdown": {
+   "category": "onfield",
+   "plain_summary": "Won previous game by 17-plus points. Back that team."
+  },
+  "bias_battery_primetime_favorite": {
+   "category": "market",
+   "plain_summary": "Team favored in a nationally televised game. Fade it."
+  },
+  "bias_battery_sandwich_spot": {
+   "category": "schedule",
+   "plain_summary": "Non-division game sandwiched between two division games. Back it."
+  },
+  "bias_battery_sandwich_spot_opener": {
+   "category": "schedule",
+   "plain_summary": "Trap-game spot, but graded on opening lines. Fade it."
+  },
+  "bias_battery_short_week": {
+   "category": "schedule",
+   "plain_summary": "Team playing on 5 days' rest or less. Fade it."
+  },
+  "bias_battery_short_week_opener": {
+   "category": "schedule",
+   "plain_summary": "Short-rested team, but graded on opening lines. Fade it."
+  },
+  "bias_battery_three_plus_road_games": {
+   "category": "schedule",
+   "plain_summary": "Team's third-plus straight true road game. Fade it."
+  },
+  "bias_battery_west_coast_early_kickoff": {
+   "category": "schedule",
+   "plain_summary": "Pacific-zone team travels for an early kickoff. Fade it."
+  },
+  "bias_battery_west_coast_early_kickoff_opener": {
+   "category": "schedule",
+   "plain_summary": "West Coast early kickoff, opening-line grading. Fade it."
+  },
+  "body_clock_east_host_west_visitor_early": {
+   "category": "schedule",
+   "plain_summary": "Eastern host, early kickoff vs Western visitor. Fade home."
+  },
+  "body_clock_night_dose_1300": {
+   "category": "control",
+   "plain_summary": "Bug: kickoffs before 2pm copied a different check's numbers."
+  },
+  "body_clock_night_dose_1400_1659": {
+   "category": "control",
+   "plain_summary": "Bug: kickoffs 2-5pm copied a different check's numbers too."
+  },
+  "body_clock_night_dose_1700_1959": {
+   "category": "control",
+   "plain_summary": "Placeholder: kickoffs 5-8pm ET, only 3 games ever qualify."
+  },
+  "body_clock_night_dose_ge2000": {
+   "category": "control",
+   "plain_summary": "Duplicate: exact copy of another late-kickoff West Coast check."
+  },
+  "body_clock_night_east_road_ge2000et": {
+   "category": "control",
+   "plain_summary": "Control: Eastern road team plays past its bedtime, late kickoff."
+  },
+  "body_clock_night_west_road_ge2000et": {
+   "category": "schedule",
+   "plain_summary": "West Coast road team, kickoff after 8pm ET. Back it."
+  },
+  "body_clock_night_west_road_ge2000et_2009_2016": {
+   "category": "schedule",
+   "plain_summary": "Night version, earlier seasons: West Coast road team. Back it."
+  },
+  "body_clock_night_west_road_ge2000et_2017_2025": {
+   "category": "schedule",
+   "plain_summary": "Night version, recent seasons: West Coast road team. Back it."
+  },
+  "body_clock_night_west_road_true_slots": {
+   "category": "schedule",
+   "plain_summary": "Prime-time night slot only: West Coast road team. Back it."
+  },
+  "body_clock_west_host_east_visitor_late": {
+   "category": "control",
+   "plain_summary": "Control: West Coast host, Eastern visitor, late kickoff."
+  },
+  "body_clock_west_road_early": {
+   "category": "schedule",
+   "plain_summary": "Early kickoff, traveling West Coast team. Back the home team."
+  },
+  "body_clock_west_road_early_2009_2016": {
+   "category": "schedule",
+   "plain_summary": "Day version, earlier seasons: West Coast road team. Back home."
+  },
+  "body_clock_west_road_early_2017_2025": {
+   "category": "schedule",
+   "plain_summary": "Day version, recent seasons: West Coast road team. Back home."
+  },
+  "body_clock_west_road_midday_control": {
+   "category": "schedule",
+   "plain_summary": "West Coast team, mid-afternoon kickoff. Back the home team."
+  },
+  "bye_overval_both_bye_sanity": {
+   "category": "control",
+   "plain_summary": "Sanity check: both teams coming off a bye week."
+  },
+  "bye_overval_fade_full_slate_post2011": {
+   "category": "schedule",
+   "plain_summary": "Team with a bye-week rest edge, recent seasons. Fade it."
+  },
+  "bye_overval_home_edge_post2011": {
+   "category": "schedule",
+   "plain_summary": "Home team rested off a bye, opponent isn't. Fade it."
+  },
+  "bye_overval_home_edge_pre2011": {
+   "category": "schedule",
+   "plain_summary": "Earlier era: home team rested off a bye. Back it."
+  },
+  "bye_overval_road_fav_post2011": {
+   "category": "schedule",
+   "plain_summary": "Road favorite coming off a bye, recent seasons. Back it."
+  },
+  "cfb_bias_battery_bowl_eligibility_opponent": {
+   "category": "schedule",
+   "plain_summary": "Opponent is one win from bowl eligibility. Fade it."
+  },
+  "cfb_bias_battery_bowl_eligibility_self": {
+   "category": "schedule",
+   "plain_summary": "Team is one win from bowl eligibility. Back it."
+  },
+  "cfb_bias_battery_bye_week_rest_edge": {
+   "category": "schedule",
+   "plain_summary": "Team has a rest edge of six-plus days. Back it."
+  },
+  "cfb_bias_battery_cfp_style_points_big_favorite": {
+   "category": "schedule",
+   "plain_summary": "Favored by 21-plus points late in the season. Fade it."
+  },
+  "cfb_bias_battery_eliminated_apathy": {
+   "category": "schedule",
+   "plain_summary": "Team has two wins or fewer, week 10-plus. Fade it."
+  },
+  "cfb_bias_battery_heavy_public_favorite": {
+   "category": "market",
+   "plain_summary": "Team is favored by 17-plus points. Back it."
+  },
+  "cfb_bias_battery_high_altitude_road": {
+   "category": "environment",
+   "plain_summary": "Visiting team travels to a high-altitude venue. Back it."
+  },
+  "cfb_bias_battery_letdown_after_upset_win": {
+   "category": "schedule",
+   "plain_summary": "Won last week as a big road underdog. Fade it."
+  },
+  "cfb_bias_battery_mactic_short_prep_away": {
+   "category": "schedule",
+   "plain_summary": "Visiting team plays a Tuesday or Wednesday game. Back it."
+  },
+  "cfb_bias_battery_marquee_favorite_premium": {
+   "category": "market",
+   "plain_summary": "Marquee program is favored to win. Back it."
+  },
+  "cfb_bias_battery_marquee_underdog_value": {
+   "category": "market",
+   "plain_summary": "Underdog status for a marquee program. Back it."
+  },
+  "cfb_bias_battery_neutral_site_designated_home": {
+   "category": "environment",
+   "plain_summary": "Neutral-site game with a schedule-assigned home team. Back that side."
+  },
+  "cfb_bias_battery_off_big_ats_cover_carryover": {
+   "category": "market",
+   "plain_summary": "Team covered by 14+ points last week. Fade them."
+  },
+  "cfb_bias_battery_off_big_ats_miss_carryover": {
+   "category": "market",
+   "plain_summary": "Team missed by 14+ points last week. Fade them."
+  },
+  "cfb_bias_battery_post_blowout_win_letdown": {
+   "category": "onfield",
+   "plain_summary": "Team won last week's game by 28+ points. Fade them."
+  },
+  "cfb_bias_battery_rivalry_finale_proxy": {
+   "category": "schedule",
+   "plain_summary": "Team plays its season's final regular-season game. Fade them."
+  },
+  "cfb_bias_battery_short_week_rest_disadvantage": {
+   "category": "schedule",
+   "plain_summary": "Team is short-rested by four or more days. Fade them."
+  },
+  "cfb_bias_battery_state_quality_market_gap": {
+   "category": "market",
+   "plain_summary": "Team's on-field quality far outranks its market spread. Back them."
+  },
+  "cfb_bias_battery_week2_overreaction_to_week1_blowout": {
+   "category": "market",
+   "plain_summary": "Week 2, coming off a 21+ point blowout. Fade them."
+  },
+  "cfb_qb_dependence_interaction": {
+   "category": "modeling",
+   "plain_summary": "Model check: adds quarterback value times pass rate."
+  },
+  "cfb_role_continuity": {
+   "category": "onfield",
+   "plain_summary": "Feature test: tracks consistent player touches game to game."
+  },
+  "cfb_role_continuity_surgical_gate_direct_effect": {
+   "category": "modeling",
+   "plain_summary": "Method check: gating the continuity feature by model disagreement."
+  },
+  "cfb_role_continuity_surgical_gated_vs_baseline": {
+   "category": "onfield",
+   "plain_summary": "Model check: filtered player-continuity feature vs no feature at all."
+  },
+  "cfb_special_teams_punt_net_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Top-quarter net punters last season. Back that team."
+  },
+  "cfb_special_teams_return_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Return unit ranked in the top quarter. Fade that team."
+  },
+  "cfb_surface_familiarity_grass_venue_mirror": {
+   "category": "environment",
+   "plain_summary": "Sanity check: turf-team visitors at grass venues, expected null effect."
+  },
+  "cfb_surface_familiarity_turf_venue_visitor_split": {
+   "category": "environment",
+   "plain_summary": "Turf game, visitor's home field is grass. Back home team."
+  },
+  "cfb_surface_switch_grass_to_turf": {
+   "category": "environment",
+   "plain_summary": "Visiting team leaves grass for a turf field. Back home."
+  },
+  "cfb_transfer_hierarchical_accuracy_proxy": {
+   "category": "modeling",
+   "plain_summary": "Modeling test: weaker teams' ratings borrow strength from stronger ones."
+  },
+  "cfb_value_weighted_role_continuity": {
+   "category": "onfield",
+   "plain_summary": "Instrument check: weights player continuity by play value."
+  },
+  "close_game_luck_early_season_fade": {
+   "category": "onfield",
+   "plain_summary": "Prior-season close-game or turnover luck, weeks 1-8. Fade them."
+  },
+  "close_game_luck_one_score_over_fade": {
+   "category": "onfield",
+   "plain_summary": "Team won unusually many close games last season. Fade them."
+  },
+  "close_game_luck_one_score_under_rebound": {
+   "category": "onfield",
+   "plain_summary": "Low close-game win rate last season. Back that team."
+  },
+  "close_game_luck_takeaway_share_extreme_fade": {
+   "category": "onfield",
+   "plain_summary": "High turnover-recovery share last season. Fade that team."
+  },
+  "close_game_luck_turnover_over_fade": {
+   "category": "onfield",
+   "plain_summary": "Strong turnover margin last season. Fade that team."
+  },
+  "close_game_luck_turnover_under_rebound": {
+   "category": "onfield",
+   "plain_summary": "Weak turnover margin last season. Back that team."
+  },
+  "combined_stacker_opener_2022_2023": {
+   "category": "modeling",
+   "plain_summary": "Modeling test: adds four situational columns to the production recipe."
+  },
+  "den_home_vs_own_conference": {
+   "category": "environment",
+   "plain_summary": "Denver hosts a visitor from its own conference. Fade Denver."
+  },
+  "divisional_rematch_blowout_winner_fade": {
+   "category": "schedule",
+   "plain_summary": "Won the earlier meeting by 14+ points. Fade the rematch."
+  },
+  "divisional_rematch_revenge_early_w1to6": {
+   "category": "schedule",
+   "plain_summary": "Rematch revenge game falls in weeks 1-6. Back the loser."
+  },
+  "divisional_rematch_revenge_home_loser": {
+   "category": "schedule",
+   "plain_summary": "Lost the earlier meeting at home. Back the rematch."
+  },
+  "divisional_rematch_revenge_late_w12plus": {
+   "category": "schedule",
+   "plain_summary": "Revenge rematch falls in week 12 or later. Back them."
+  },
+  "divisional_rematch_revenge_road_loser": {
+   "category": "schedule",
+   "plain_summary": "Earlier loss came on the road. Back the rematch."
+  },
+  "dst_arizona_away_shield": {
+   "category": "schedule",
+   "plain_summary": "Arizona visits during the week clocks change nationally. Fade Arizona."
+  },
+  "dst_arizona_home_shield": {
+   "category": "schedule",
+   "plain_summary": "Arizona hosts during the week clocks change nationally. Back Arizona."
+  },
+  "dst_fall_transition_shock": {
+   "category": "schedule",
+   "plain_summary": "Week of the fall clock change. Back the home team."
+  },
+  "dst_placebo_shifted_window": {
+   "category": "control",
+   "plain_summary": "Placebo: fake clock-change week, three weeks early."
+  },
+  "dst_transition_eastbound_interaction": {
+   "category": "schedule",
+   "plain_summary": "Team flies two-plus zones east during clock-change week. Fade them."
+  },
+  "ecdf_smoothing_accuracy": {
+   "category": "modeling",
+   "plain_summary": "Model setting: smooths the probability curve instead of raw history."
+  },
+  "environmental_battery_aqi_high_outdoor": {
+   "category": "environment",
+   "plain_summary": "Outdoor game, unhealthy home-county air quality. Back the home team."
+  },
+  "environmental_battery_aqi_high_outdoor_opener": {
+   "category": "environment",
+   "plain_summary": "Opener-line grading of unhealthy-air outdoor games. Back the home team."
+  },
+  "environmental_battery_drought_severe_grass": {
+   "category": "environment",
+   "plain_summary": "Grass-field game during severe home-county drought. Back the home team."
+  },
+  "environmental_battery_drought_severe_grass_opener": {
+   "category": "environment",
+   "plain_summary": "Replication: outdoor grass game in a county with severe drought."
+  },
+  "era_trend_division_revenge_game": {
+   "category": "schedule",
+   "plain_summary": "Trend check: division-revenge edge strength across seasons."
+  },
+  "era_trend_extra_rest_edge": {
+   "category": "schedule",
+   "plain_summary": "Trend check: extra-rest edge strength across seasons."
+  },
+  "era_trend_hc_year_one_fade": {
+   "category": "schedule",
+   "plain_summary": "Sanity check: first-year-coach fade edge across seasons."
+  },
+  "era_trend_home_underdog": {
+   "category": "schedule",
+   "plain_summary": "Trend check: home-underdog edge strength across seasons."
+  },
+  "era_trend_penalty_rate_quartile": {
+   "category": "schedule",
+   "plain_summary": "Trend check: penalty-discipline edge strength across seasons."
+  },
+  "era_trend_production_model_opener_proxy_edge": {
+   "category": "modeling",
+   "plain_summary": "Trend check: production model's edge across seasons, grading shifted 2020."
+  },
+  "era_trend_surface_switch": {
+   "category": "schedule",
+   "plain_summary": "Trend check: surface-switch edge strength across seasons."
+  },
+  "era_weighting_cfb_half_life_16": {
+   "category": "modeling",
+   "plain_summary": "Screen: 16-season half-life weighting, thin seasons excluded."
+  },
+  "era_weighting_cfb_half_life_2": {
+   "category": "modeling",
+   "plain_summary": "Screen: 2-season half-life weighting, thin seasons excluded."
+  },
+  "era_weighting_cfb_half_life_4": {
+   "category": "modeling",
+   "plain_summary": "Screen: 4-season half-life weighting, thin seasons excluded."
+  },
+  "era_weighting_cfb_half_life_8": {
+   "category": "modeling",
+   "plain_summary": "Screen: 8-season half-life weighting, thin seasons excluded."
+  },
+  "era_weighting_cfb_rolling_10": {
+   "category": "modeling",
+   "plain_summary": "Screen: 10-season rolling training window, thin seasons excluded."
+  },
+  "era_weighting_cfb_rolling_6": {
+   "category": "modeling",
+   "plain_summary": "Screen: 6-season rolling training window, thin seasons excluded."
+  },
+  "era_weighting_half_life_8_opener_confirmation": {
+   "category": "modeling",
+   "plain_summary": "Confirmation: 8-season half-life weighting, checked at the opener."
+  },
+  "era_weighting_nfl_half_life_16": {
+   "category": "modeling",
+   "plain_summary": "Follow-up: 16-season half-life weighting, checked at the close."
+  },
+  "era_weighting_nfl_half_life_2": {
+   "category": "modeling",
+   "plain_summary": "Follow-up: 2-season half-life weighting, checked at the close."
+  },
+  "era_weighting_nfl_half_life_4": {
+   "category": "modeling",
+   "plain_summary": "Follow-up: 4-season half-life weighting, checked at the close."
+  },
+  "era_weighting_nfl_half_life_8": {
+   "category": "modeling",
+   "plain_summary": "Follow-up: 8-season half-life weighting, checked at the close."
+  },
+  "era_weighting_nfl_half_life_8_opener": {
+   "category": "modeling",
+   "plain_summary": "Info read: 8-season half-life weighting, checked at the opener."
+  },
+  "era_weighting_nfl_rolling_10": {
+   "category": "modeling",
+   "plain_summary": "Follow-up: 10-season rolling training window, checked at the close."
+  },
+  "era_weighting_nfl_rolling_6": {
+   "category": "modeling",
+   "plain_summary": "Follow-up: 6-season rolling training window, checked at the close."
+  },
+  "estimation_variance_bagging_stability_cfb": {
+   "category": "modeling",
+   "plain_summary": "Method check: averaging many resampled model refits together."
+  },
+  "estimation_variance_center_shrink_cfb": {
+   "category": "modeling",
+   "plain_summary": "Method check: shrinking predicted spreads toward the market line."
+  },
+  "estimation_variance_disagreement_gate_full_vs_thin_cfb": {
+   "category": "modeling",
+   "plain_summary": "Method check: model overrides baseline only where it clearly disagrees."
+  },
+  "estimation_variance_disagreement_gate_tau05_confirmation_cfb_out_of_screen": {
+   "category": "modeling",
+   "plain_summary": "Confirmation: disagreement-gate idea retested against a random-gate placebo."
+  },
+  "ffc_adp_cellA_highadp_underdog_back_ppr_w14": {
+   "category": "attention",
+   "plain_summary": "Fantasy-hyped roster priced as underdog, PPR weeks 1-4. Back it."
+  },
+  "ffc_adp_cellB_adpwins_residual_pos_back_ppr_w14": {
+   "category": "attention",
+   "plain_summary": "Draft rank exceeds win total, PPR weeks 1-4. Back it."
+  },
+  "ffc_adp_cellC_highadp_underdog_back_ppr_w12": {
+   "category": "attention",
+   "plain_summary": "Weeks 1-2: fantasy-hyped underdog roster, PPR scoring. Back it."
+  },
+  "ffc_adp_cellD_adpwins_residual_pos_back_ppr_w12": {
+   "category": "attention",
+   "plain_summary": "Two-week draft rank beats win total, PPR. Back it."
+  },
+  "ffc_adp_robust_std_cellA_highadp_underdog_back_w14": {
+   "category": "attention",
+   "plain_summary": "Standard-scoring fantasy favorite priced as underdog, weeks 1-4. Back it."
+  },
+  "ffc_adp_robust_std_cellB_adpwins_residual_pos_back_w14": {
+   "category": "attention",
+   "plain_summary": "Standard-scoring draft rank beats win total, weeks 1-4. Back it."
+  },
+  "fluview_away_market_elevated": {
+   "category": "health",
+   "plain_summary": "Visiting team's state at peak flu. Back the home team."
+  },
+  "fluview_differential_home_worse": {
+   "category": "health",
+   "plain_summary": "Just the home team shows elevated flu. Fade them."
+  },
+  "fluview_home_market_elevated": {
+   "category": "health",
+   "plain_summary": "Home team's state at peak flu. Fade them."
+  },
+  "fluview_peak_away_elevated": {
+   "category": "health",
+   "plain_summary": "During peak flu weeks, visitor's state also elevated. Back them."
+  },
+  "fluview_peak_home_elevated": {
+   "category": "health",
+   "plain_summary": "In peak flu weeks, home team's state elevated. Fade them."
+  },
+  "forecast_weather_dome_team_outdoors_cold": {
+   "category": "environment",
+   "plain_summary": "Tuesday forecast: dome team faces 40-degree outdoor game. Back home."
+  },
+  "forecast_weather_high_wind_outdoor": {
+   "category": "environment",
+   "plain_summary": "Screen: outdoor game, forecast calls for wind of 15+ mph."
+  },
+  "forecast_weather_kn_dome_cold_windy_full": {
+   "category": "environment",
+   "plain_summary": "Kickoff forecast: dome team plays outdoors, cold, windy. Back home."
+  },
+  "forecast_weather_kn_dome_cold_windy_pre2020": {
+   "category": "environment",
+   "plain_summary": "Pre-2020 dome team plays outdoors, cold, windy. Back home."
+  },
+  "forecast_weather_kn_precip_high_total_full": {
+   "category": "environment",
+   "plain_summary": "Heavy rain forecast paired with a high total. Back home."
+  },
+  "forecast_weather_kn_precip_high_total_pre2020": {
+   "category": "environment",
+   "plain_summary": "Rain and a big total, pre-2020 seasons only. Back home."
+  },
+  "forecast_weather_kn_temp_gap_cold_visitor_full": {
+   "category": "environment",
+   "plain_summary": "Road team faces a 25-degree cold shock. Back home."
+  },
+  "forecast_weather_kn_temp_gap_cold_visitor_pre2020": {
+   "category": "environment",
+   "plain_summary": "Road team's cold shock, seasons before 2020. Back home."
+  },
+  "forecast_weather_kn_temp_swing_prior_week_full": {
+   "category": "environment",
+   "plain_summary": "Visitor's weather swung 30 degrees in a week. Back home."
+  },
+  "forecast_weather_kn_temp_swing_prior_week_pre2020": {
+   "category": "environment",
+   "plain_summary": "Visitor's 30-degree weather swing, before 2020. Back home."
+  },
+  "forecast_weather_kn_warm_team_cold_late_full": {
+   "category": "environment",
+   "plain_summary": "Warm-climate visitor plays week 13+ in freezing cold. Back home."
+  },
+  "forecast_weather_kn_warm_team_cold_late_pre2020": {
+   "category": "environment",
+   "plain_summary": "Cold-weather mismatch, warm-climate visitor, older seasons only. Back home."
+  },
+  "forecast_weather_kn_wind_passing_away_favorite_full": {
+   "category": "environment",
+   "plain_summary": "Pass-heavy road favorite meets 15mph+ wind. Back home."
+  },
+  "forecast_weather_kn_wind_passing_away_favorite_pre2020": {
+   "category": "environment",
+   "plain_summary": "Pass-heavy favorite vs wind, seasons before 2020. Back home."
+  },
+  "forecast_weather_temp_gap_cold_visitor": {
+   "category": "environment",
+   "plain_summary": "Tuesday's forecast has the visitor 25 degrees colder. Back home."
+  },
+  "forecast_weather_warm_team_cold_late": {
+   "category": "environment",
+   "plain_summary": "Late-season cold forecast catches a warm-climate visitor. Back home."
+  },
+  "fourth_down_aggressiveness": {
+   "category": "onfield",
+   "plain_summary": "Coach goes for it more than expected. Back that team."
+  },
+  "graph_schedule_rating_brier": {
+   "category": "modeling",
+   "plain_summary": "Model feature: adds search-engine-style team rankings to the model."
+  },
+  "groupwise_ridge_block_penalties": {
+   "category": "modeling",
+   "plain_summary": "Model setting: lighter smoothing on market columns, heavier elsewhere."
+  },
+  "hc_year_one_fade": {
+   "category": "offfield",
+   "plain_summary": "First-year head coach, weeks 1-8. Fade that team."
+  },
+  "illness_away_active_ge1": {
+   "category": "health",
+   "plain_summary": "One away player sick but active. Back the home team."
+  },
+  "illness_away_ge2": {
+   "category": "health",
+   "plain_summary": "Away team has two-plus sick players. Back the home team."
+  },
+  "illness_differential_home_worse": {
+   "category": "health",
+   "plain_summary": "Home side is sicker than the visitor. Fade them."
+  },
+  "illness_home_active_ge1": {
+   "category": "health",
+   "plain_summary": "Home team has one sick but active player. Fade them."
+  },
+  "illness_home_ge2": {
+   "category": "health",
+   "plain_summary": "Two or more home players listed sick. Fade them."
+  },
+  "injury_value_lost_gradient": {
+   "category": "health",
+   "plain_summary": "Sanity check: injury-loss thirds, from least to most severe."
+  },
+  "injury_value_lost_narrowed": {
+   "category": "health",
+   "plain_summary": "Model feature: injury-value measure, one assumption removed."
+  },
+  "injury_value_lost_prior_week_absence": {
+   "category": "health",
+   "plain_summary": "Feature: injury cost estimated from last week's missed snaps."
+  },
+  "injury_value_lost_prior_week_absence_saturday_channel": {
+   "category": "health",
+   "plain_summary": "Sanity check: absence substitute compared with Saturday's real injury news."
+  },
+  "injury_value_lost_prior_week_report": {
+   "category": "health",
+   "plain_summary": "Feature check: injury value estimated from last week's Friday report."
+  },
+  "injury_value_lost_prior_week_report_saturday_channel": {
+   "category": "health",
+   "plain_summary": "Sanity check: report substitute compared with Saturday's real injury news."
+  },
+  "injury_value_lost_tuesday_cutoff_official": {
+   "category": "health",
+   "plain_summary": "Sanity check: official injury report alone, visible by Tuesday noon."
+  },
+  "injury_value_lost_tuesday_cutoff_pft_augmented": {
+   "category": "health",
+   "plain_summary": "Sanity check: adding sports-news headlines to the Tuesday report."
+  },
+  "injury_value_lost_tuesday_saturday_channel_official_only": {
+   "category": "health",
+   "plain_summary": "Sanity check: Saturday cutoff compared with the official Tuesday cutoff."
+  },
+  "injury_value_lost_tuesday_saturday_channel_pft_augmented": {
+   "category": "health",
+   "plain_summary": "Sanity check: media-augmented Tuesday cutoff compared with Saturday's."
+  },
+  "interim_hc_active": {
+   "category": "offfield",
+   "plain_summary": "Team just fired its coach mid-season. Back them."
+  },
+  "interim_hc_active_era_2009_2017": {
+   "category": "offfield",
+   "plain_summary": "Team fired its coach mid-season, seasons 2009-2017. Back them."
+  },
+  "interim_hc_active_era_2018_2025": {
+   "category": "offfield",
+   "plain_summary": "Recent-era interim coach after a mid-season firing. Back them."
+  },
+  "interim_hc_active_excl_suspension": {
+   "category": "offfield",
+   "plain_summary": "Interim coach installed for reasons other than suspension. Back them."
+  },
+  "interim_hc_fired_year_one": {
+   "category": "offfield",
+   "plain_summary": "Sanity check: predecessor was fired during their own rookie year."
+  },
+  "interim_hc_first_game": {
+   "category": "offfield",
+   "plain_summary": "Team's first game under a brand-new interim coach. Back them."
+  },
+  "interim_hc_home_within_interim": {
+   "category": "offfield",
+   "plain_summary": "Sanity check: among interim-coached games, home teams versus road teams."
+  },
+  "learned_availability_ats_2018_2025": {
+   "category": "modeling",
+   "plain_summary": "Model setting: let the model learn injury-report absence rates itself."
+  },
+  "maxev_full_stack": {
+   "category": "modeling",
+   "plain_summary": "Stack check: combining four betting rules into a single pick."
+  },
+  "mexico_city_neutral": {
+   "category": "environment",
+   "plain_summary": "Sanity check: outdoor games above 7,000 feet in Mexico City."
+  },
+  "mod06_js_shrinkage_position_prior_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: skill-value feature shrinks toward position average, not zero."
+  },
+  "mod06_position_prior_shrinkage": {
+   "category": "modeling",
+   "plain_summary": "Tuning check: injury weighting shrinks toward typical position value."
+  },
+  "mod07_holdover_bias_replication": {
+   "category": "schedule",
+   "plain_summary": "Replication: playoff-holdover favorites said to fade in Week 1."
+  },
+  "mod07_opener_bias_ablation": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: three live schedule tweaks measured together."
+  },
+  "mod08_smooth_cdf_mapping": {
+   "category": "modeling",
+   "plain_summary": "Model setting: bell-curve probability mapping vs the production method."
+  },
+  "mod08_smooth_cdf_mapping_opener": {
+   "category": "modeling",
+   "plain_summary": "Model setting: probability-mapping swap regraded using the opening line."
+  },
+  "mod11_calibration_by_regime_line_bucket": {
+   "category": "modeling",
+   "plain_summary": "Model setting: calibration curve split by point-spread size, not pooled."
+  },
+  "mod11_calibration_by_regime_season_era": {
+   "category": "modeling",
+   "plain_summary": "Era check: separate calibration curve per season era, not pooled."
+  },
+  "motivation_ladder_elim_visitor_alive_host": {
+   "category": "schedule",
+   "plain_summary": "Eliminated visitor faces a host still fighting. Back the host."
+  },
+  "motivation_ladder_fighter_vs_nothing": {
+   "category": "schedule",
+   "plain_summary": "Playoff-spot chaser faces a team with nothing left. Back them."
+  },
+  "motivation_ladder_locked_seed_wk16_18": {
+   "category": "schedule",
+   "plain_summary": "Team has clinched its seed, weeks 16-18. Fade that team."
+  },
+  "motivation_ladder_tank_zone_wk14_18": {
+   "category": "schedule",
+   "plain_summary": "Bottom-of-the-league team in the tank zone, weeks 14-18. Fade them."
+  },
+  "movement_attribution_pop_threshold_attributed_any": {
+   "category": "market",
+   "plain_summary": "Betting line's move traced to a known cause."
+  },
+  "movement_attribution_pop_threshold_injury": {
+   "category": "market",
+   "plain_summary": "Line move traced to injury news."
+  },
+  "movement_attribution_pop_threshold_public": {
+   "category": "market",
+   "plain_summary": "Sizable line move blamed on heavy public betting."
+  },
+  "movement_attribution_pop_threshold_public_book_shading_public": {
+   "category": "market",
+   "plain_summary": "Big move looks like the book shading the public."
+  },
+  "movement_attribution_pop_threshold_public_reverse_line_movement": {
+   "category": "market",
+   "plain_summary": "Line movement goes against where the public is betting."
+  },
+  "movement_attribution_pop_threshold_unattributed": {
+   "category": "market",
+   "plain_summary": "A point-or-more move with no clear cause."
+  },
+  "movement_attribution_pop_threshold_weather": {
+   "category": "market",
+   "plain_summary": "Weather is blamed for a point-or-more line move."
+  },
+  "movement_attribution_pop_unfiltered_attributed_any": {
+   "category": "market",
+   "plain_summary": "Any line move at all, cause identified."
+  },
+  "movement_attribution_pop_unfiltered_injury": {
+   "category": "market",
+   "plain_summary": "Any size line move traced to injury news."
+  },
+  "movement_attribution_pop_unfiltered_public": {
+   "category": "market",
+   "plain_summary": "Any size move blamed on heavy public betting."
+  },
+  "movement_attribution_pop_unfiltered_public_book_shading_public": {
+   "category": "market",
+   "plain_summary": "Even a small move looks like book shading."
+  },
+  "movement_attribution_pop_unfiltered_public_reverse_line_movement": {
+   "category": "market",
+   "plain_summary": "A slight move runs opposite the public's money."
+  },
+  "movement_attribution_pop_unfiltered_unattributed": {
+   "category": "market",
+   "plain_summary": "Any small line move with no clear cause."
+  },
+  "movement_attribution_pop_unfiltered_weather": {
+   "category": "market",
+   "plain_summary": "Even a slight move gets blamed on weather."
+  },
+  "movement_direction_tilt_opener": {
+   "category": "market",
+   "plain_summary": "Follow the predicted move when confidence ranks top half."
+  },
+  "movement_direction_tilt_opener_variant1_no_filter": {
+   "category": "market",
+   "plain_summary": "Override every disagreement with the predicted move, no filter."
+  },
+  "movement_direction_tilt_opener_variant2_top_quartile": {
+   "category": "market",
+   "plain_summary": "Stricter gate: only top-quarter-confidence predicted moves get followed."
+  },
+  "movement_rule_composed_chain": {
+   "category": "market",
+   "plain_summary": "Layer market-move following on top of the full pick chain."
+  },
+  "nflcom_friday_new_saturday_designation": {
+   "category": "control",
+   "plain_summary": "Sanity check: nearly every team gets some Friday injury tag."
+  },
+  "nflcom_friday_out_count_ge2": {
+   "category": "health",
+   "plain_summary": "Friday injury report lists two-plus starters Out. Fade them."
+  },
+  "nflcom_friday_q_or_worse_starter_caliber": {
+   "category": "health",
+   "plain_summary": "One starter listed Questionable or worse, Friday report. Fade them."
+  },
+  "nflcom_refresh_net_out_diff_ge1_on_chain": {
+   "category": "health",
+   "plain_summary": "One more Out designation than the opponent. Fade them."
+  },
+  "nflcom_refresh_out1_starter_on_chain": {
+   "category": "health",
+   "plain_summary": "One starter-caliber player ruled Out. Fade them, chain overlay."
+  },
+  "nflcom_refresh_out2_starters_on_chain": {
+   "category": "health",
+   "plain_summary": "Two starter-caliber players ruled Out, chain overlay. Fade them."
+  },
+  "nflcom_refresh_out2_starters_on_chain_gate_admitted": {
+   "category": "health",
+   "plain_summary": "Two-plus starters Out, only counting pre-deadline reports. Fade them."
+  },
+  "observed_movement_oracle_full_slate": {
+   "category": "control",
+   "plain_summary": "Oracle: perfect foresight of the Tuesday-to-close line move."
+  },
+  "observed_movement_oracle_sunday_am_realism": {
+   "category": "control",
+   "plain_summary": "Ceiling check: line move known only up to Sunday late-morning."
+  },
+  "observed_movement_threshold_0_5": {
+   "category": "market",
+   "plain_summary": "Line moved half a point or more. Follow the move."
+  },
+  "observed_movement_threshold_0_5_sunday_am_realism": {
+   "category": "market",
+   "plain_summary": "Half-point move confirmed only by Sunday late-morning. Follow it."
+  },
+  "observed_movement_threshold_1_0": {
+   "category": "market",
+   "plain_summary": "Line moved a point or more. Follow the move."
+  },
+  "observed_movement_threshold_1_0_sunday_am_realism": {
+   "category": "market",
+   "plain_summary": "By Sunday morning, line moved a point. Follow it."
+  },
+  "odds_microstructure_H1_1_2_dose_response_high_minus_low": {
+   "category": "market",
+   "plain_summary": "Compares pick accuracy in strongly-leaning vs weakly-leaning markets."
+  },
+  "odds_microstructure_H2_2a_spread_std_abs_ats_margin_high_minus_low": {
+   "category": "market",
+   "plain_summary": "Compares scoring-margin surprise when sportsbooks disagree most vs least."
+  },
+  "odds_microstructure_H2_2b_price_std_juice_accuracy_low_minus_high_dispersion": {
+   "category": "market",
+   "plain_summary": "Checks pick accuracy when sportsbook prices vary widely."
+  },
+  "odds_microstructure_H3_3_0a_full_week_oracle_2020_2025_sanity_check": {
+   "category": "control",
+   "plain_summary": "Oracle: always picks the side the line ultimately moved toward."
+  },
+  "odds_microstructure_H3_3_0b_full_week_oracle_2023_2025_baseline": {
+   "category": "control",
+   "plain_summary": "Oracle: full-week line-movement foresight, most recent seasons."
+  },
+  "odds_microstructure_H3_3_1_tue_to_wed_oracle_2023_2025": {
+   "category": "control",
+   "plain_summary": "Oracle: knows only the Tuesday-to-Wednesday line move."
+  },
+  "odds_microstructure_H5_5_1_totals_juice_lean_accuracy": {
+   "category": "market",
+   "plain_summary": "On the total-points line, follow the market's lean."
+  },
+  "odds_microstructure_H6_6_1_abs_ats_margin_high_minus_low_hold": {
+   "category": "market",
+   "plain_summary": "Margin-of-error comparison: high sportsbook hold versus low hold."
+  },
+  "odds_microstructure_H6_6_2_juice_accuracy_high_minus_low_hold": {
+   "category": "market",
+   "plain_summary": "Pick accuracy compared: high sportsbook hold versus low."
+  },
+  "offseason_retention_050_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: prior-season carryover lowered from 67% to 50%."
+  },
+  "offseason_retention_075_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: carryover raised from last year's 67% to 75%."
+  },
+  "offseason_retention_per_metric_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: per-stat carryover, 17%-35%, compared with flat 67%."
+  },
+  "ol_acute_overhaul_fade": {
+   "category": "onfield",
+   "plain_summary": "Offensive line lost most starters since last game. Fade them."
+  },
+  "ol_high_continuity_back": {
+   "category": "onfield",
+   "plain_summary": "Offensive line has stayed intact for two games. Back them."
+  },
+  "ol_low_continuity_fade": {
+   "category": "onfield",
+   "plain_summary": "Offensive line shuffled heavily the past two games. Fade them."
+  },
+  "ol_prior_season_weak_early_fade": {
+   "category": "onfield",
+   "plain_summary": "Weak offensive-line continuity last season. Fade them early, weeks 1-8."
+  },
+  "opener_error_mining_confidence_bucket_0p02_0p05": {
+   "category": "modeling",
+   "plain_summary": "Production pick accuracy when confidence sits 2-5 points from even."
+  },
+  "opener_error_mining_confidence_bucket_0p05_0p10": {
+   "category": "modeling",
+   "plain_summary": "Model confidence lands 5 to 10 points from even."
+  },
+  "opener_error_mining_confidence_bucket_gt0p10": {
+   "category": "modeling",
+   "plain_summary": "Checks the model's most confident picks, over 10 points."
+  },
+  "opener_error_mining_confidence_bucket_lt0p02": {
+   "category": "modeling",
+   "plain_summary": "Looks at picks nearly tied, under 2 points."
+  },
+  "opener_error_mining_division_game_yes": {
+   "category": "modeling",
+   "plain_summary": "Production accuracy specifically in division rivalry games."
+  },
+  "opener_error_mining_favorite_side_home_favorite": {
+   "category": "modeling",
+   "plain_summary": "Audits accuracy when the home team is favored."
+  },
+  "opener_error_mining_favorite_side_road_favorite": {
+   "category": "modeling",
+   "plain_summary": "Looks at games where the visiting team is favored."
+  },
+  "opener_error_mining_movement_agreement_agrees": {
+   "category": "modeling",
+   "plain_summary": "Mislabeled: this 'agrees' entry actually holds 'disagrees' data."
+  },
+  "opener_error_mining_movement_agreement_agrees_corrected": {
+   "category": "modeling",
+   "plain_summary": "Fixed label: market movement lines up with the pick."
+  },
+  "opener_error_mining_movement_agreement_disagrees": {
+   "category": "modeling",
+   "plain_summary": "Mislabeled: this 'disagrees' entry actually holds 'agrees' data."
+  },
+  "opener_error_mining_movement_agreement_disagrees_corrected": {
+   "category": "modeling",
+   "plain_summary": "Correction: market movement runs opposite the model's pick."
+  },
+  "opener_error_mining_movement_agreement_disagrees_overlay_paired_delta": {
+   "category": "market",
+   "plain_summary": "Line already moved against the pick. Follow it instead."
+  },
+  "opener_error_mining_movement_agreement_disagrees_overlay_paired_delta_move_ge_1_0": {
+   "category": "market",
+   "plain_summary": "Against the pick, line moved a full point. Flip."
+  },
+  "opener_error_mining_movement_agreement_flat": {
+   "category": "modeling",
+   "plain_summary": "Production accuracy when the line never moved at all."
+  },
+  "opener_error_mining_pick_home_away_home": {
+   "category": "modeling",
+   "plain_summary": "Audits accuracy specifically on the model's home picks."
+  },
+  "opener_error_mining_pick_side_favorite": {
+   "category": "modeling",
+   "plain_summary": "Checks accuracy specifically when the pick is favored."
+  },
+  "opener_error_mining_rest_diff_away_more_rested": {
+   "category": "modeling",
+   "plain_summary": "Visiting team enters with more rest days than home."
+  },
+  "opener_error_mining_rest_diff_even": {
+   "category": "modeling",
+   "plain_summary": "Both teams enter with identical rest days."
+  },
+  "opener_error_mining_season_2025": {
+   "category": "modeling",
+   "plain_summary": "Looks only at the 2025 season alone."
+  },
+  "opener_error_mining_slate_primetime": {
+   "category": "modeling",
+   "plain_summary": "Primetime games only: Thursday, Monday, or late kickoffs."
+  },
+  "opener_error_mining_spread_magnitude_0_2p5": {
+   "category": "modeling",
+   "plain_summary": "Opening spread is 2.5 points or fewer."
+  },
+  "opener_error_mining_spread_magnitude_10plus": {
+   "category": "modeling",
+   "plain_summary": "Line opened as a blowout, 10-plus points."
+  },
+  "opener_error_mining_spread_magnitude_3_6p5": {
+   "category": "modeling",
+   "plain_summary": "Opening spread sits between 3 and 6.5 points."
+  },
+  "opener_error_mining_spread_magnitude_7_9p5": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: pick accuracy when spread runs 7 to 9.5."
+  },
+  "opener_error_mining_total_bucket_45_48": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: accuracy when the total sits 45 to 48."
+  },
+  "opener_error_mining_total_bucket_below_42": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: low-scoring games, projected total under 42."
+  },
+  "opener_error_mining_week_third_early": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: early-season accuracy, weeks 1 through 6."
+  },
+  "opener_error_mining_week_third_late": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: late-season accuracy, weeks 13 through 18."
+  },
+  "overlay_loo_drop_coach_fade": {
+   "category": "offfield",
+   "plain_summary": "Model setting: coach-experience fade dropped from the four-part policy."
+  },
+  "overlay_loo_drop_division_revenge_tilt": {
+   "category": "schedule",
+   "plain_summary": "Model setting: division-rematch tilt dropped from the four-part policy."
+  },
+  "overlay_loo_drop_player_arrests_back_side_policy": {
+   "category": "offfield",
+   "plain_summary": "Model setting: player-arrests flip dropped from the four-part policy."
+  },
+  "overlay_loo_drop_spread_gap_zone_fade": {
+   "category": "market",
+   "plain_summary": "Model setting: spread-gap fade dropped from the four-part policy."
+  },
+  "overlay_single_addition_to_played_union_forward_holdout": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: tests adding a first-year coach's first-game rule."
+  },
+  "overlay_stack_combined_opener_2020_2025": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: stacks all six experimental overlays onto one policy."
+  },
+  "overlay_subset_all_seven_joint": {
+   "category": "modeling",
+   "plain_summary": "Model setting: seven-overlay stack, adding the arrest-based flip."
+  },
+  "overlay_subset_holdout_2020_2022_reverse": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: coach, arrest, spread-gap combo tested on earlier seasons."
+  },
+  "overlay_subset_holdout_2023_2025_frozen": {
+   "category": "modeling",
+   "plain_summary": "Combo policy of three rules tested on later seasons."
+  },
+  "overlay_subset_production_chain_coach_arrest": {
+   "category": "modeling",
+   "plain_summary": "Model setting: two-rule production combo checked against the plain model."
+  },
+  "overlay_subset_production_plus_division_revenge": {
+   "category": "modeling",
+   "plain_summary": "Model setting: production combo plus a division-rematch tilt rule."
+  },
+  "overlay_subset_production_plus_spread_gap_zone": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: production combo plus a spread-gap fade rule."
+  },
+  "overlay_subset_reselection_twelve_member_forward_holdout": {
+   "category": "modeling",
+   "plain_summary": "Sanity check: best of twelve candidate overlays, re-picked and retested."
+  },
+  "participation_offense_defense_rapm": {
+   "category": "onfield",
+   "plain_summary": "Model setting: adds participation-based player value to the roster metric."
+  },
+  "pbp08_pass_mirror_null": {
+   "category": "control",
+   "plain_summary": "Placebo: weak passing offense meets weak pass defense."
+  },
+  "pbp08_pass_mismatch": {
+   "category": "onfield",
+   "plain_summary": "Hot-passing offense faces a weak pass defense. Back the offense."
+  },
+  "pbp08_protection_mirror_null": {
+   "category": "control",
+   "plain_summary": "Placebo: solid pass protection meets a weak pass rush."
+  },
+  "pbp08_protection_mismatch": {
+   "category": "onfield",
+   "plain_summary": "Leaky pass protection meets a pass rush. Back the defense."
+  },
+  "pbp_drive_bundle": {
+   "category": "onfield",
+   "plain_summary": "Sanity check: adds broader play-by-play and drive-level stats."
+  },
+  "penalty_crew_dpi_tilt_pass_heavy_favorite": {
+   "category": "onfield",
+   "plain_summary": "Pass-heavy home favorite meets a high-DPI officiating crew. Back them."
+  },
+  "penalty_crew_flag_rate_high_total_line": {
+   "category": "onfield",
+   "plain_summary": "High-flag crew works a high-scoring projected game. Back home."
+  },
+  "penalty_crew_high_flag_heavy_underdog_opener": {
+   "category": "onfield",
+   "plain_summary": "Flag-happy crew, home is a big underdog. Back them."
+  },
+  "penalty_crew_holding_tilt_run_heavy": {
+   "category": "onfield",
+   "plain_summary": "Run-heavy home team meets a high-holding officiating crew. Fade them."
+  },
+  "penalty_discipline": {
+   "category": "onfield",
+   "plain_summary": "Team's roster was among the league's least penalized. Back them."
+  },
+  "pick_conditioned_off_bye_fade_pre2018": {
+   "category": "schedule",
+   "plain_summary": "Model's pick is the team coming off bye. Fade it."
+  },
+  "pick_conditioned_rest_mismatch_pre2018": {
+   "category": "schedule",
+   "plain_summary": "Model's pick sits in an unequal-rest matchup. Fade it."
+  },
+  "pick_conditioned_road_favorite_pre2018": {
+   "category": "market",
+   "plain_summary": "Pick sits on a road favorite; back it."
+  },
+  "pick_conditioned_spread_gap_zone_pre2018": {
+   "category": "market",
+   "plain_summary": "Model's pick falls in the seven-to-ten-point spread gap. Fade it."
+  },
+  "player_arrests_recent_14d_back_side_policy_opener": {
+   "category": "offfield",
+   "plain_summary": "Pick opposes a recently arrested team's player. Flip sides."
+  },
+  "player_arrests_recent_14d_fade_close": {
+   "category": "offfield",
+   "plain_summary": "Team had a recent player arrest. Fade them."
+  },
+  "player_arrests_recent_14d_fade_opener": {
+   "category": "offfield",
+   "plain_summary": "Recent player arrest, graded at the opening line. Fade them."
+  },
+  "player_arrests_violent_person_recent_14d_fade_close": {
+   "category": "offfield",
+   "plain_summary": "Player named in a violent-incident report recently. Fade the team."
+  },
+  "player_arrests_violent_person_recent_14d_fade_opener": {
+   "category": "offfield",
+   "plain_summary": "Violent-incident arrest, graded at the opening line. Fade them."
+  },
+  "player_family_base_vs_continuity": {
+   "category": "modeling",
+   "plain_summary": "Model setting: lineup-continuity data added to a market-only baseline."
+  },
+  "player_family_base_vs_injuries": {
+   "category": "modeling",
+   "plain_summary": "Model setting: adding injury-count data to a market-only baseline."
+  },
+  "player_family_base_vs_injuries_continuity": {
+   "category": "modeling",
+   "plain_summary": "Roster setting: injury and lineup-continuity data added to baseline."
+  },
+  "player_family_base_vs_injury_value": {
+   "category": "modeling",
+   "plain_summary": "Model check: injury-severity value added to a market-only baseline."
+  },
+  "player_family_base_vs_qb": {
+   "category": "modeling",
+   "plain_summary": "Passer check: quarterback-specific stats added to a market-only baseline."
+  },
+  "player_family_base_vs_qb_continuity": {
+   "category": "modeling",
+   "plain_summary": "Model check: adding quarterback and continuity data to baseline."
+  },
+  "player_family_base_vs_qb_injuries": {
+   "category": "modeling",
+   "plain_summary": "Roster check: quarterback-plus-injury features added to a market-only baseline."
+  },
+  "player_family_base_vs_value": {
+   "category": "modeling",
+   "plain_summary": "Model check: total-injury-value features added to a market-only baseline."
+  },
+  "player_qb_continuity_bundled_alpha": {
+   "category": "modeling",
+   "plain_summary": "Old test: quarterback-continuity features and smoothing changed together."
+  },
+  "player_qb_continuity_matched_alpha": {
+   "category": "modeling",
+   "plain_summary": "Model check: smoothing held fixed while adding quarterback-continuity features, 2014-2017."
+  },
+  "proxy_opener_production_rule_2009_2019": {
+   "category": "control",
+   "plain_summary": "Proxy check: model scored on stand-in opening lines, 2009-2019."
+  },
+  "pt_away_underdog": {
+   "category": "schedule",
+   "plain_summary": "Away underdog in a primetime game. Back that team."
+  },
+  "pt_divisional_favorite": {
+   "category": "schedule",
+   "plain_summary": "Favorite in a primetime divisional matchup. Fade that team."
+  },
+  "pt_off_loss": {
+   "category": "schedule",
+   "plain_summary": "Loss last week, now a primetime game. Back them."
+  },
+  "pt_off_win": {
+   "category": "schedule",
+   "plain_summary": "Win last week, now a primetime game. Back them."
+  },
+  "pt_post_mnf_sunday": {
+   "category": "schedule",
+   "plain_summary": "Team plays Sunday six days after Monday night. Fade them."
+  },
+  "pt_post_mnf_sunday_era_2009_2017": {
+   "category": "schedule",
+   "plain_summary": "2009-2017 era: short week after a Monday game. Fade them."
+  },
+  "pt_post_mnf_sunday_era_2018_2025": {
+   "category": "schedule",
+   "plain_summary": "2018-2025 era: short week after a Monday game. Fade them."
+  },
+  "public_betting_battery_fade_heavy_public_close": {
+   "category": "market",
+   "plain_summary": "Public bet share of 70%+ on one side. Fade it."
+  },
+  "public_betting_battery_fade_heavy_public_opener": {
+   "category": "market",
+   "plain_summary": "Opener-graded version: 70%+ public bets on one side. Fade it."
+  },
+  "public_betting_battery_model_interaction_against": {
+   "category": "market",
+   "plain_summary": "Model check: forced picks when public bets heavily against them."
+  },
+  "public_betting_battery_model_interaction_diff": {
+   "category": "market",
+   "plain_summary": "Model check: picks compared when public agrees versus disagrees."
+  },
+  "public_betting_battery_sharp_divergence_close": {
+   "category": "market",
+   "plain_summary": "Money share beats bet share by 15+ points. Follow it."
+  },
+  "qb_age_rookie_late_improvement": {
+   "category": "onfield",
+   "plain_summary": "Quarterback with six or fewer starts, week 9+. Back them."
+  },
+  "qb_age_rookie_vs_pressure": {
+   "category": "onfield",
+   "plain_summary": "Rookie-level starter faces a top-tier pass rush. Fade them."
+  },
+  "qb_age_second_year_jump": {
+   "category": "onfield",
+   "plain_summary": "Quarterback in their second year as a starter. Back them."
+  },
+  "qb_age_veteran_late_fade": {
+   "category": "onfield",
+   "plain_summary": "Veteran starter with 200+ career starts, week 13+. Fade them."
+  },
+  "qb_news_backup_visible_by_deadline_screen": {
+   "category": "health",
+   "plain_summary": "Backup quarterback start foreshadowed in the news early. Fade them."
+  },
+  "recurrence_flags_player_brier_validation": {
+   "category": "health",
+   "plain_summary": "Recurrence check: past injury-return history added to injury-forecast baseline."
+  },
+  "reddit_away_comment_ratio_elevated": {
+   "category": "attention",
+   "plain_summary": "Away fans posting unusually many comments. Back the home team."
+  },
+  "reddit_away_spike_value": {
+   "category": "attention",
+   "plain_summary": "Away subreddit spikes this week. Back the home team."
+  },
+  "reddit_home_comment_ratio_elevated": {
+   "category": "attention",
+   "plain_summary": "Home fans posting unusually many comments. Fade that team."
+  },
+  "reddit_home_spike_fade": {
+   "category": "attention",
+   "plain_summary": "Home subreddit spikes this week. Fade the home team."
+  },
+  "reddit_spike_gap_home_worse": {
+   "category": "attention",
+   "plain_summary": "Home team alone shows a fan-activity spike. Fade them."
+  },
+  "redteam_body_clock_night_increment_within_west_road_lpm": {
+   "category": "schedule",
+   "plain_summary": "Check: does night kickoff alone hurt West Coast road teams."
+  },
+  "redteam_body_clock_night_west_road_distance_controlled_lpm": {
+   "category": "schedule",
+   "plain_summary": "Check: West Coast road teams at night, controlling for distance."
+  },
+  "redteam_bye_fade_sham_placebo_null": {
+   "category": "control",
+   "plain_summary": "Placebo: bye weeks randomly shifted by one or two weeks."
+  },
+  "redteam_bye_overval_fade_full_slate_withinseason_bye_map": {
+   "category": "schedule",
+   "plain_summary": "Team off a real bye week, mapped correctly. Fade them."
+  },
+  "redteam_nflcom_out2_nonstarters_only": {
+   "category": "health",
+   "plain_summary": "Non-starters make up two or more Out players. Fade them."
+  },
+  "redteam_nflcom_out2_starters_only": {
+   "category": "health",
+   "plain_summary": "Starters make up two or more Out players. Fade them."
+  },
+  "redteam_overlay_subset_loso_cv": {
+   "category": "modeling",
+   "plain_summary": "Check: overlay pick from five seasons, tested on a sixth."
+  },
+  "redzone_reversion_c1_rz_over_fade": {
+   "category": "onfield",
+   "plain_summary": "Best-in-league red-zone scoring last season. Fade that team."
+  },
+  "redzone_reversion_c2_rz_under_rebound": {
+   "category": "onfield",
+   "plain_summary": "Worst-in-league red-zone scoring last season. Back that team."
+  },
+  "redzone_reversion_c3_third_down_over_fade": {
+   "category": "onfield",
+   "plain_summary": "Third-down conversion rate ranked best last season. Fade that team."
+  },
+  "redzone_reversion_c4_third_down_under_rebound": {
+   "category": "onfield",
+   "plain_summary": "Team's third-down conversions were league-worst last season. Back them."
+  },
+  "redzone_reversion_c5_hot_offense_vs_stingy_defense": {
+   "category": "onfield",
+   "plain_summary": "Hot red-zone offense visits a leaky red-zone defense. Back home."
+  },
+  "redzone_reversion_c6_early_season_extreme_fade": {
+   "category": "onfield",
+   "plain_summary": "Weeks 1-8: last year's red-zone or third-down elite. Fade them."
+  },
+  "referee_battery_home_penalty_tilt_bottom_quartile": {
+   "category": "onfield",
+   "plain_summary": "Referee rarely favors home with penalty calls. Back home."
+  },
+  "referee_battery_home_penalty_tilt_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Referee often favors home with penalty calls. Back home."
+  },
+  "referee_battery_penalty_rate_bottom_quartile": {
+   "category": "onfield",
+   "plain_summary": "Few total penalties get called in this game. Fade home."
+  },
+  "referee_battery_penalty_rate_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Referee's total penalty count runs high. Back home."
+  },
+  "referee_battery_rookie_home_cover": {
+   "category": "onfield",
+   "plain_summary": "Referee is in their first season officiating. Back home."
+  },
+  "referee_battery_veteran_home_cover": {
+   "category": "onfield",
+   "plain_summary": "Referee has five or more years of experience. Fade home."
+  },
+  "residual_location_purged_cv_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: same error-centering check, different testing method."
+  },
+  "residual_location_recency_hl100_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: recent errors count more, 100-game fade."
+  },
+  "residual_location_recency_hl200_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: newer errors weighted heavier, 200-game fade."
+  },
+  "residual_location_recency_hl400_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: latest errors matter most, 400-game fade."
+  },
+  "residual_location_recency_hl800_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: recency weighting, very slow 800-game fade."
+  },
+  "residual_location_shrink_025_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: pulls error center 25% toward zero."
+  },
+  "residual_location_shrink_050_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: shifts error center halfway toward zero."
+  },
+  "residual_location_shrink_075_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: shrinks error center 75% toward zero."
+  },
+  "residual_location_shrink_100_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: erases the error center completely."
+  },
+  "residual_location_train_recency_hl100_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: training favors recent games, 100-game fade."
+  },
+  "residual_location_train_recency_hl200_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: fits mostly on recent games, 200-game fade."
+  },
+  "residual_location_train_recency_hl400_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: learns mostly from recent games, 400-game fade."
+  },
+  "residual_location_train_recency_hl800_cfb": {
+   "category": "modeling",
+   "plain_summary": "Model setting: built mostly from recent games, 800-game fade."
+  },
+  "respiratory_away_market_elevated": {
+   "category": "health",
+   "plain_summary": "Visiting team's home state has record-high respiratory illness. Back home."
+  },
+  "respiratory_differential_home_worse": {
+   "category": "health",
+   "plain_summary": "Only the home state shows elevated illness. Fade home."
+  },
+  "respiratory_home_market_elevated": {
+   "category": "health",
+   "plain_summary": "Home team's own state has record-high respiratory illness. Fade home."
+  },
+  "respiratory_peak_away_elevated": {
+   "category": "health",
+   "plain_summary": "Peak flu weeks: visiting team's state is elevated. Back home."
+  },
+  "respiratory_peak_home_elevated": {
+   "category": "health",
+   "plain_summary": "Late-season illness peak: home team's own state elevated. Fade home."
+  },
+  "ridge_alpha_2000_nfl_opener_confirmation": {
+   "category": "modeling",
+   "plain_summary": "Model setting: smoothing dial raised from 10 to 2,000."
+  },
+  "ridge_alpha_global": {
+   "category": "modeling",
+   "plain_summary": "Model setting: wide range of smoothing values tested."
+  },
+  "roof_battery_closed_benign_forecast_vs_open": {
+   "category": "environment",
+   "plain_summary": "Retractable roof stays closed in mild weather. Fade home."
+  },
+  "roof_battery_home_cover_open_vs_closed": {
+   "category": "environment",
+   "plain_summary": "Retractable-roof stadium plays with the roof open. Fade home."
+  },
+  "roof_battery_home_cover_open_vs_closed_opener": {
+   "category": "environment",
+   "plain_summary": "Retractable roof open, graded at the Tuesday opener. Fade home."
+  },
+  "roof_battery_total_covered_open_vs_closed": {
+   "category": "environment",
+   "plain_summary": "Open retractable roof lets in outdoor wind. Bet the under."
+  },
+  "roof_battery_visiting_dome_open_vs_closed": {
+   "category": "environment",
+   "plain_summary": "Dome-only visitor plays outdoors with the roof open. Fade them."
+  },
+  "roof_battery_visiting_dome_open_vs_closed_opener": {
+   "category": "environment",
+   "plain_summary": "Replication: dome-only visitor, roof open, graded at the opener."
+  },
+  "sagarin_battery_large_divergence_close": {
+   "category": "market",
+   "plain_summary": "Power rating diverges 3+ points from the close. Follow it."
+  },
+  "sagarin_battery_large_divergence_era_2010_2016": {
+   "category": "market",
+   "plain_summary": "Seasons 2010-2016 only: rating diverged 3+ points. Follow it."
+  },
+  "sagarin_battery_large_divergence_era_2017_2025": {
+   "category": "market",
+   "plain_summary": "Seasons 2017-2025 only: rating diverged 3+ points. Follow it."
+  },
+  "sagarin_battery_large_divergence_open": {
+   "category": "market",
+   "plain_summary": "Sagarin diverges 3+ points from the Tuesday opener. Follow it."
+  },
+  "sagarin_battery_model_agreement_close": {
+   "category": "market",
+   "plain_summary": "Sanity check: model accuracy when Sagarin agrees vs disagrees."
+  },
+  "sagarin_battery_top_decile_close": {
+   "category": "market",
+   "plain_summary": "Rating disagreement ranks in the top 10% ever. Follow it."
+  },
+  "sagarin_battery_top_decile_open": {
+   "category": "market",
+   "plain_summary": "Computer rating disagrees sharply with the opening line. Back it."
+  },
+  "sbr_opener_era_2011_2014": {
+   "category": "market",
+   "plain_summary": "Early-era check: production rule re-scored against an alternate opener."
+  },
+  "sbr_opener_era_2015_2019": {
+   "category": "market",
+   "plain_summary": "Replication: production rule scored against a mid-era alternate opener."
+  },
+  "sbr_opener_era_2020_2021": {
+   "category": "market",
+   "plain_summary": "Confirmation: production rule scored against a recent-era alternate opener."
+  },
+  "sbr_opener_pooled_2011_2021": {
+   "category": "market",
+   "plain_summary": "Pooled check: production rule scored against an alternate opener source."
+  },
+  "shrunk_overlay_policy_walkforward": {
+   "category": "modeling",
+   "plain_summary": "Model check: learned rule flips picks using seven overlay signals."
+  },
+  "special_teams_composite_edge_bottom_quartile": {
+   "category": "onfield",
+   "plain_summary": "Team in bottom quarter on overall special teams. Fade them."
+  },
+  "special_teams_composite_edge_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Team in top quarter on overall special teams. Back them."
+  },
+  "special_teams_fg_kicker_bottom_quartile": {
+   "category": "onfield",
+   "plain_summary": "Kicker ranked bottom quarter in accuracy-for-distance. Fade that team."
+  },
+  "special_teams_fg_kicker_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Kicker ranked top quarter in accuracy-for-distance. Back that team."
+  },
+  "special_teams_punt_net_bottom_quartile": {
+   "category": "onfield",
+   "plain_summary": "Punter ranked bottom quarter in season net yards. Fade them."
+  },
+  "special_teams_punt_net_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Punter ranked top quarter in season net yards. Back them."
+  },
+  "special_teams_return_bottom_quartile": {
+   "category": "onfield",
+   "plain_summary": "Bottom-quarter return unit, punt and kickoff combined. Fade them."
+  },
+  "special_teams_return_top_quartile": {
+   "category": "onfield",
+   "plain_summary": "Top-quarter return unit, punt and kickoff combined. Back them."
+  },
+  "surface_familiarity_r1_turf_venue_visitor_split": {
+   "category": "environment",
+   "plain_summary": "Grass-based visitor plays at a turf-surface venue. Back home."
+  },
+  "surface_familiarity_r2_grass_venue_mirror": {
+   "category": "environment",
+   "plain_summary": "Mirror check: turf-based visitor plays at a grass venue."
+  },
+  "surface_familiarity_r3_era_2009_2017": {
+   "category": "environment",
+   "plain_summary": "Grass-raised visitor at a turf venue, earlier seasons. Back home."
+  },
+  "surface_familiarity_r3_era_2018_2025": {
+   "category": "environment",
+   "plain_summary": "Grass-team visitor at a turf venue, recent seasons. Back home."
+  },
+  "surface_profile_opener_head_to_head": {
+   "category": "modeling",
+   "plain_summary": "Model check: surface-switch input added to the prediction model."
+  },
+  "surface_switch_feature_arm": {
+   "category": "modeling",
+   "plain_summary": "Feature test: surface-switch input added to the prediction model."
+  },
+  "team_style_deep_ball_outdoor_wind": {
+   "category": "onfield",
+   "plain_summary": "Deep-ball visiting offense faces 15+ mph outdoor wind. Back home."
+  },
+  "team_style_distinct_identity": {
+   "category": "onfield",
+   "plain_summary": "Sanity check: team's on-field style is very unusual."
+  },
+  "team_style_pace_mismatch_dog_cover": {
+   "category": "onfield",
+   "plain_summary": "Big pace mismatch between the two teams. Back the underdog."
+  },
+  "team_style_short_game_identity": {
+   "category": "onfield",
+   "plain_summary": "Style check: team relies heavily on short passes."
+  },
+  "team_style_short_game_vs_pressure_defense": {
+   "category": "onfield",
+   "plain_summary": "Short-pass visitor faces a pressure-heavy home defense. Back the visitor."
+  },
+  "travel_rest_away_off_bye": {
+   "category": "schedule",
+   "plain_summary": "Visiting team resting 13-plus days before this game. Back them."
+  },
+  "travel_rest_eastbound_multizone": {
+   "category": "schedule",
+   "plain_summary": "Visitor crossing two or more time zones eastward. Back home."
+  },
+  "travel_rest_home_off_bye": {
+   "category": "schedule",
+   "plain_summary": "Home team resting 13-plus days before this game. Back them."
+  },
+  "travel_rest_international_game": {
+   "category": "schedule",
+   "plain_summary": "International game, home team not at its stadium. Fade them."
+  },
+  "travel_rest_long_distance_road": {
+   "category": "schedule",
+   "plain_summary": "Visitor traveling 1500-plus miles to this game. Back home."
+  },
+  "travel_rest_return_trip_hangover": {
+   "category": "schedule",
+   "plain_summary": "Home team fresh off a long road trip. Fade them."
+  },
+  "travel_rest_short_week_road": {
+   "category": "schedule",
+   "plain_summary": "Visitor playing on 5 days rest or less. Back home."
+  },
+  "travel_rest_thursday_pure": {
+   "category": "schedule",
+   "plain_summary": "Plain Thursday game, regardless of venue or weather. Back home."
+  },
+  "txn_away_churn_elevated": {
+   "category": "offfield",
+   "plain_summary": "Visiting team made a post-freeze roster move. Fade them."
+  },
+  "txn_away_ir_placement_since_freeze": {
+   "category": "offfield",
+   "plain_summary": "Visiting team placed a player on IR late. Fade them."
+  },
+  "txn_away_ps_elevation_72h": {
+   "category": "offfield",
+   "plain_summary": "Visitor elevated a practice-squad player 72 hours out. Fade them."
+  },
+  "txn_differential_home_worse_churn": {
+   "category": "offfield",
+   "plain_summary": "Home side alone made a post-freeze roster move. Fade them."
+  },
+  "txn_home_churn_elevated": {
+   "category": "offfield",
+   "plain_summary": "Home team made a post-freeze roster move. Fade them."
+  },
+  "txn_home_ir_placement_since_freeze": {
+   "category": "offfield",
+   "plain_summary": "Home team placed a player on IR late. Fade them."
+  },
+  "txn_home_ps_elevation_72h": {
+   "category": "offfield",
+   "plain_summary": "Home side elevated a practice-squad player pre-kickoff. Fade them."
+  },
+  "venue_milestone_home_opener": {
+   "category": "schedule",
+   "plain_summary": "Home team's first home game of the season. Back them."
+  },
+  "venue_milestone_new_stadium_debut": {
+   "category": "schedule",
+   "plain_summary": "First-ever home game at a brand-new stadium. Fade them."
+  },
+  "venue_milestone_post_bye_home": {
+   "category": "schedule",
+   "plain_summary": "Home team returns from a bye week. Back them."
+  },
+  "venue_milestone_post_bye_road": {
+   "category": "schedule",
+   "plain_summary": "Visiting team returns from a bye week. Fade them."
+  },
+  "vi_disp_homecover_top_vs_bottom_tercile": {
+   "category": "market",
+   "plain_summary": "Bookmakers disagree widely on the line. Back the home team."
+  },
+  "vi_disp_movement_top_vs_bottom_tercile": {
+   "category": "market",
+   "plain_summary": "Sanity check: book disagreement compared to line movement."
+  },
+  "vi_dispersion_bottom_tercile_underdog": {
+   "category": "control",
+   "plain_summary": "Control: books agree closely; still backing the underdog."
+  },
+  "vi_dispersion_top_tercile_favorite": {
+   "category": "market",
+   "plain_summary": "Sportsbooks disagree most about this spread. Fade the favorite."
+  },
+  "vi_dispersion_top_tercile_underdog": {
+   "category": "market",
+   "plain_summary": "Books split widely on the spread. Back the underdog."
+  },
+  "vi_totaldisp_overshoot_top_vs_bottom_tercile": {
+   "category": "market",
+   "plain_summary": "Totals check: total-line disagreement compared to scoring overshoot."
+  },
+  "weak_stack_v2_narrowed_only": {
+   "category": "modeling",
+   "plain_summary": "Model setting: fixing injury cost instead of learning it."
+  },
+  "weak_stack_v2_penalty_only": {
+   "category": "modeling",
+   "plain_summary": "Roster setting: adds each team's prior-season penalty rate."
+  },
+  "weak_stack_v2_stack": {
+   "category": "modeling",
+   "plain_summary": "Combined setting: two model changes stacked together."
+  },
+  "weak_stack_v3_nfl_opener_confirmation": {
+   "category": "modeling",
+   "plain_summary": "Model setting: fifteen situational features added at once."
+  },
+  "weak_stack_v4_forecast_weather_opener_probability_rule": {
+   "category": "modeling",
+   "plain_summary": "Model setting: six raw weather-forecast numbers added."
+  },
+  "weak_stack_v4_forecast_weather_opener_sign_rule": {
+   "category": "modeling",
+   "plain_summary": "Model setting: sign-rule scoring of the weather-forecast columns."
+  },
+  "weather_battery_dome_team_outdoors_cold": {
+   "category": "environment",
+   "plain_summary": "Dome team plays outdoors below 40°F. Back the home team."
+  },
+  "weather_battery_extreme_cold": {
+   "category": "environment",
+   "plain_summary": "Outdoor game at 25°F or colder. Back the home team."
+  },
+  "weather_battery_high_altitude_road": {
+   "category": "environment",
+   "plain_summary": "Sanity check: altitude-acclimated visitor flag, structurally never fires."
+  },
+  "weather_battery_high_wind_outdoor": {
+   "category": "environment",
+   "plain_summary": "Wind check: outdoor games at 15+ mph, no predicted side."
+  },
+  "weather_battery_high_wind_road_favorite": {
+   "category": "environment",
+   "plain_summary": "Road favorite faces 15+ mph wind outdoors. Back home."
+  },
+  "weather_battery_surface_switch_grass_to_turf": {
+   "category": "environment",
+   "plain_summary": "Turf field hosts a grass-accustomed visiting team. Back home."
+  },
+  "weather_battery_thursday_outdoor_cold": {
+   "category": "environment",
+   "plain_summary": "Thursday game outdoors at 35°F or colder. Back home."
+  },
+  "weather_battery_warm_team_cold_late": {
+   "category": "environment",
+   "plain_summary": "Warm-weather visitor faces cold weather after week 13. Back home."
+  },
+  "weather_followup_high_wind_pass_heavy_visitor": {
+   "category": "environment",
+   "plain_summary": "Pass-heavy visitor faces 15+ mph wind outdoors. Back home."
+  },
+  "weather_followup_rest_disadvantage_cold": {
+   "category": "environment",
+   "plain_summary": "Shorter-rested visitor plays outdoors at 35°F or colder. Back home."
+  },
+  "weather_followup_surface_switch_x_outdoor_cold": {
+   "category": "environment",
+   "plain_summary": "Grass-to-turf switch plus cold weather, 45°F or colder. Back home."
+  },
+  "weather_followup_temp_gap_cold_visitor": {
+   "category": "environment",
+   "plain_summary": "Visiting team's normal temperature drops 25°F or more. Back home."
+  },
+  "weather_followup_wind_gap_visitor": {
+   "category": "environment",
+   "plain_summary": "Wind-unaccustomed visitor meets 15+ mph gusts. Back home."
+  },
+  "weather_oracle_ceiling_opener_probability_rule": {
+   "category": "control",
+   "plain_summary": "Oracle: model handed the weather that actually happened."
+  },
+  "wxtot_cold35_top_total": {
+   "category": "environment",
+   "plain_summary": "Cold game with a high scoring total. Fade favorites."
+  },
+  "wxtot_precip60_top_total": {
+   "category": "environment",
+   "plain_summary": "High rain forecast with a high scoring total."
+  },
+  "wxtot_wind15_bottom_total": {
+   "category": "control",
+   "plain_summary": "Control: windy game with a low scoring total."
+  },
+  "wxtot_wind15_top_total": {
+   "category": "environment",
+   "plain_summary": "Windy game with a high scoring total. Fade favorites."
+  }
+ }
+}

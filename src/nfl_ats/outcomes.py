@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -10,7 +11,12 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, brier_score_loss, log_loss
 
 from nfl_ats.backtest import summarize_predictions
+from nfl_ats.calibration import ResidualSmoothingMethod
+from nfl_ats.constants import DEFAULT_MIN_TRAIN_GAMES
+from nfl_ats.estimation_variance import MIN_BLOCKS_FOR_INTERVAL, OnDegenerate, guard_block_count
+from nfl_ats.key_numbers import DEFAULT_KEY_NUMBERS, implied_key_number_mass
 from nfl_ats.margin import (
+    DEFAULT_LINE_SWEEP_OFFSETS,
     MARGIN_FEATURE_PROFILES,
     MarginFeatureProfile,
     MarginModel,
@@ -18,7 +24,12 @@ from nfl_ats.margin import (
     fit_market_baseline,
     margin_feature_set,
 )
-from nfl_ats.modeling import CoverModel, fit_cover_model, validate_model_frame
+from nfl_ats.modeling import (
+    CoverModel,
+    fit_cover_model,
+    regular_season_rows,
+    validate_model_frame,
+)
 from nfl_ats.odds import choose_bet, settle_bet
 from nfl_ats.prediction_safety import validate_outcome_prediction_card
 
@@ -177,11 +188,12 @@ def _score_methods(
     straight_up: CoverModel | None,
     direct_ats: CoverModel | None,
     min_edge: float,
+    probability_method: ResidualSmoothingMethod = "ecdf",
 ) -> list[pd.DataFrame]:
     batches: list[pd.DataFrame] = []
     for method, model in margin_models.items():
         batch = games.copy()
-        forecasts = model.predict(batch)
+        forecasts = model.predict(batch, probability_method=probability_method)
         for column in forecasts:
             batch[column] = forecasts[column]
         batch["method"] = method
@@ -197,6 +209,9 @@ def _score_methods(
         straight["model_name"] = "logistic"
         straight["home_win_probability"] = straight_up.predict_home_cover(straight)
         straight["home_cover_probability"] = np.nan
+        straight["home_cover_probability_excluding_push"] = np.nan
+        straight["push_probability"] = np.nan
+        straight["home_loss_probability"] = np.nan
         straight["predicted_margin"] = np.nan
         straight["fair_spread"] = np.nan
         straight["predicted_market_residual"] = np.nan
@@ -214,6 +229,9 @@ def _score_methods(
         ats["method"] = "direct_ats"
         ats["model_name"] = "logistic"
         ats["home_cover_probability"] = direct_ats.predict_home_cover(ats)
+        ats["home_cover_probability_excluding_push"] = np.nan
+        ats["push_probability"] = np.nan
+        ats["home_loss_probability"] = np.nan
         ats["home_win_probability"] = np.nan
         ats["predicted_margin"] = np.nan
         ats["fair_spread"] = np.nan
@@ -320,10 +338,18 @@ def walk_forward_outcomes(
     end_season: int | None = None,
     regressor: str = "ridge",
     min_edge: float = 0.02,
-    min_train_games: int = 500,
+    min_train_games: int = DEFAULT_MIN_TRAIN_GAMES,
     feature_profile: MarginFeatureProfile = "base",
     methods: tuple[str, ...] = OUTCOME_METHODS,
     ridge_alpha: float = 10.0,
+    # Default unchanged (2026-08-19, MOD-08 promotion): this walk-forward
+    # backs every historical/research backtest (margin-backtest CLI, player
+    # ablations, experiment comparisons), so it stays on the raw ECDF unless
+    # a caller explicitly asks for "gaussian" -- e.g. to build a matching
+    # ``margins/`` evaluation for a Gaussian-mapped weekly forecast to
+    # synchronize against. See ``score_outcome_week``, the one caller whose
+    # OWN default did change.
+    probability_method: ResidualSmoothingMethod = "ecdf",
 ) -> OutcomeBacktestResult:
     if feature_profile not in MARGIN_FEATURE_PROFILES:
         raise ValueError(f"Unknown outcome feature profile: {feature_profile}")
@@ -331,7 +357,7 @@ def walk_forward_outcomes(
         raise ValueError("end_season cannot be earlier than start_season")
     selected_methods = normalize_outcome_methods(methods)
     validate_model_frame(features)
-    frame = features.copy()
+    frame = regular_season_rows(features).copy()
     frame["gameday"] = pd.to_datetime(frame["gameday"], errors="raise")
     completed = frame.loc[frame["result"].notna()].copy()
     test_mask = completed["season"].ge(start_season)
@@ -356,7 +382,8 @@ def walk_forward_outcomes(
             ridge_alpha=ridge_alpha,
         )
         weekly_predictions = pd.concat(
-            _score_methods(weekly_games, *models, min_edge), ignore_index=True
+            _score_methods(weekly_games, *models, min_edge, probability_method),
+            ignore_index=True,
         )
         validate_outcome_prediction_card(
             weekly_predictions,
@@ -381,17 +408,25 @@ def walk_forward_outcomes(
     )
 
 
-def score_outcome_week(
+def _target_and_models_for_week(
     features: pd.DataFrame,
     *,
     season: int,
     week: int,
-    regressor: str = "ridge",
-    min_edge: float = 0.02,
-    min_train_games: int = 500,
-    feature_profile: MarginFeatureProfile = "base",
-    ridge_alpha: float = 10.0,
-) -> pd.DataFrame:
+    regressor: str,
+    min_train_games: int,
+    feature_profile: MarginFeatureProfile,
+    ridge_alpha: float,
+    methods: tuple[OutcomeMethod, ...],
+) -> tuple[pd.DataFrame, dict[str, MarginModel], CoverModel | None, CoverModel | None]:
+    """Leak-safe target games and models trained strictly before the target week.
+
+    Shared by ``score_outcome_week`` and ``score_outcome_week_line_sweep`` so
+    both use the exact same training cutoff and fitted models -- the line
+    sweep is a re-evaluation of the same walk-forward fit at alternative
+    lines, never a fresh fit with a different (potentially leaky) cutoff.
+    """
+
     if feature_profile not in MARGIN_FEATURE_PROFILES:
         raise ValueError(f"Unknown outcome feature profile: {feature_profile}")
     validate_model_frame(features)
@@ -403,7 +438,8 @@ def score_outcome_week(
     if target["spread_line"].isna().any():
         raise ValueError("Cannot score outcome models while a target spread is missing")
     cutoff = target["gameday"].min()
-    training = frame.loc[frame["gameday"].lt(cutoff) & frame["result"].notna()].copy()
+    training = regular_season_rows(frame)
+    training = training.loc[training["gameday"].lt(cutoff) & training["result"].notna()].copy()
     if len(training) < min_train_games:
         raise ValueError(
             f"Only {len(training)} eligible games precede the target; need {min_train_games}"
@@ -412,11 +448,42 @@ def score_outcome_week(
         training,
         regressor=regressor,
         feature_profile=feature_profile,
-        methods=normalize_outcome_methods(OUTCOME_METHODS),
+        methods=methods,
         ridge_alpha=ridge_alpha,
     )
+    return (target, *models)
+
+
+def score_outcome_week(
+    features: pd.DataFrame,
+    *,
+    season: int,
+    week: int,
+    regressor: str = "ridge",
+    min_edge: float = 0.02,
+    min_train_games: int = DEFAULT_MIN_TRAIN_GAMES,
+    feature_profile: MarginFeatureProfile = "base",
+    ridge_alpha: float = 10.0,
+    # Promoted 2026-09-07: median location, unchanged Gaussian scale.
+    # See docs/gaussian_median_promotion.md. Historical backtests keep ECDF;
+    # the weekly pipeline explicitly supplies the matching median method.
+    probability_method: ResidualSmoothingMethod = "gaussian_median",
+) -> pd.DataFrame:
+    target, margin_models, straight_up, direct_ats = _target_and_models_for_week(
+        features,
+        season=season,
+        week=week,
+        regressor=regressor,
+        min_train_games=min_train_games,
+        feature_profile=feature_profile,
+        ridge_alpha=ridge_alpha,
+        methods=normalize_outcome_methods(OUTCOME_METHODS),
+    )
     predictions = pd.concat(
-        _score_methods(target, *models, min_edge), ignore_index=True
+        _score_methods(
+            target, margin_models, straight_up, direct_ats, min_edge, probability_method
+        ),
+        ignore_index=True,
     ).sort_values(["game_id", "method"])
     validate_outcome_prediction_card(
         predictions,
@@ -428,13 +495,184 @@ def score_outcome_week(
     return predictions
 
 
+MARGIN_DISTRIBUTION_METHODS: tuple[str, ...] = ("market", "fair_margin", "market_residual")
+
+
+def fit_margin_models_for_week(
+    features: pd.DataFrame,
+    *,
+    season: int,
+    week: int,
+    regressor: str = "ridge",
+    min_train_games: int = DEFAULT_MIN_TRAIN_GAMES,
+    feature_profile: MarginFeatureProfile = "base",
+    ridge_alpha: float = 10.0,
+    methods: tuple[str, ...] = MARGIN_DISTRIBUTION_METHODS,
+) -> tuple[pd.DataFrame, dict[str, MarginModel]]:
+    """Target games and fitted margin-distribution models for one week.
+
+    A thin, public entry point over the same leak-safe cutoff logic
+    ``score_outcome_week`` uses, for callers (such as re-scoring at
+    externally supplied lines) that need the fitted ``MarginModel`` objects
+    themselves rather than a pre-summarized prediction card.
+    """
+
+    unknown = sorted(set(methods).difference(MARGIN_DISTRIBUTION_METHODS))
+    if unknown:
+        raise ValueError(f"Unknown margin-distribution methods: {', '.join(unknown)}")
+    selected = tuple(method for method in MARGIN_DISTRIBUTION_METHODS if method in methods)
+    if not selected:
+        raise ValueError("At least one margin-distribution method is required")
+    target, margin_models, _, _ = _target_and_models_for_week(
+        features,
+        season=season,
+        week=week,
+        regressor=regressor,
+        min_train_games=min_train_games,
+        feature_profile=feature_profile,
+        ridge_alpha=ridge_alpha,
+        methods=normalize_outcome_methods(selected),
+    )
+    return target, margin_models
+
+
+def score_outcome_week_line_sweep(
+    features: pd.DataFrame,
+    *,
+    season: int,
+    week: int,
+    regressor: str = "ridge",
+    min_train_games: int = DEFAULT_MIN_TRAIN_GAMES,
+    feature_profile: MarginFeatureProfile = "base",
+    ridge_alpha: float = 10.0,
+    offsets: Sequence[float] = DEFAULT_LINE_SWEEP_OFFSETS,
+    methods: tuple[str, ...] = MARGIN_DISTRIBUTION_METHODS,
+    probability_method: ResidualSmoothingMethod = "gaussian_median",
+) -> pd.DataFrame:
+    """Line-sweep confidence curves for one week's margin-distribution methods.
+
+    Fits the same walk-forward models ``score_outcome_week`` would (cutoff
+    strictly before the target week's earliest kickoff) and evaluates each
+    margin-based method's predictive distribution across a grid of
+    alternative home spreads. Straight-up and direct-ATS methods have no
+    margin distribution to sweep and are excluded even if requested.
+
+    Returns a tidy table with one row per (method, game, alternative line).
+    """
+
+    target, margin_models = fit_margin_models_for_week(
+        features,
+        season=season,
+        week=week,
+        regressor=regressor,
+        min_train_games=min_train_games,
+        feature_profile=feature_profile,
+        ridge_alpha=ridge_alpha,
+        methods=methods,
+    )
+    frames: list[pd.DataFrame] = []
+    for method, model in margin_models.items():
+        sweep = model.line_sweep(target, offsets=offsets, probability_method=probability_method)
+        sweep.insert(0, "method", method)
+        frames.append(sweep)
+    return (
+        pd.concat(frames, ignore_index=True)
+        .sort_values(["method", "game_id", "line_offset"])
+        .reset_index(drop=True)
+    )
+
+
+def walk_forward_key_number_mass(
+    features: pd.DataFrame,
+    *,
+    start_season: int,
+    end_season: int | None = None,
+    regressor: str = "ridge",
+    min_train_games: int = DEFAULT_MIN_TRAIN_GAMES,
+    feature_profile: MarginFeatureProfile = "base",
+    methods: tuple[str, ...] = MARGIN_DISTRIBUTION_METHODS,
+    key_numbers: Sequence[int] = DEFAULT_KEY_NUMBERS,
+    ridge_alpha: float = 10.0,
+) -> pd.DataFrame:
+    """Leak-safe walk-forward implied key-number mass, one row per game/method.
+
+    Mirrors ``walk_forward_outcomes``'s weekly cutoff exactly -- each week's
+    models are trained strictly on games before that week's earliest
+    kickoff -- but additionally records each game's implied probability mass
+    on the key numbers, which the summarized outcome card does not retain.
+    Intended for ``key_numbers.summarize_key_number_calibration``, a
+    validation report rather than a model-selection signal.
+    """
+
+    unknown = sorted(set(methods).difference(MARGIN_DISTRIBUTION_METHODS))
+    if unknown:
+        raise ValueError(f"Unknown margin-distribution methods: {', '.join(unknown)}")
+    selected = normalize_outcome_methods(
+        tuple(method for method in MARGIN_DISTRIBUTION_METHODS if method in methods)
+    )
+    if not selected:
+        raise ValueError("At least one margin-distribution method is required")
+    if end_season is not None and end_season < start_season:
+        raise ValueError("end_season cannot be earlier than start_season")
+    validate_model_frame(features)
+    frame = features.copy()
+    frame["gameday"] = pd.to_datetime(frame["gameday"], errors="raise")
+    completed = frame.loc[frame["result"].notna()].copy()
+    test_mask = completed["season"].ge(start_season)
+    if end_season is not None:
+        test_mask &= completed["season"].le(end_season)
+    test = completed.loc[test_mask]
+    if test.empty:
+        end_label = f" through {end_season}" if end_season is not None else ""
+        raise ValueError(f"No completed games found from season {start_season}{end_label}")
+
+    batches: list[pd.DataFrame] = []
+    for (season, week), weekly_games in test.groupby(["season", "week"], sort=True):
+        cutoff = weekly_games["gameday"].min()
+        training = completed.loc[completed["gameday"].lt(cutoff)]
+        if len(training) < min_train_games:
+            continue
+        margin_models, _, _ = _fit_week_models(
+            training,
+            regressor=regressor,
+            feature_profile=feature_profile,
+            methods=selected,
+            ridge_alpha=ridge_alpha,
+        )
+        for method, model in margin_models.items():
+            mass = implied_key_number_mass(model.distribution(weekly_games), key_numbers)
+            mass.insert(0, "method", method)
+            mass.insert(1, "game_id", weekly_games["game_id"].to_numpy())
+            mass.insert(2, "season", int(str(season)))
+            mass.insert(3, "week", int(str(week)))
+            mass["result"] = weekly_games["result"].to_numpy()
+            mass["spread_line"] = weekly_games["spread_line"].to_numpy()
+            batches.append(mass)
+    if not batches:
+        raise ValueError("No walk-forward window had enough prior training games")
+    return (
+        pd.concat(batches, ignore_index=True)
+        .sort_values(["method", "season", "week", "game_id"])
+        .reset_index(drop=True)
+    )
+
+
 def outcome_bootstrap_intervals(
     predictions: pd.DataFrame,
     *,
-    samples: int = 1_000,
+    # Was 1,000 -- the noisiest of the three bootstrap paths. This one is
+    # already vectorized, so raising it is nearly free. See
+    # paired_feature_comparisons for why seed jitter matters here.
+    samples: int = 20_000,
     confidence: float = 0.95,
     block: Literal["week", "season"] = "week",
     seed: int = 20260812,
+    # D4 guard. Default 'warn' + a flagged output column, never 'raise':
+    # refusing would change what existing call sites return, and the point is
+    # that the flag TRAVELS with the number into the CSV a registry entry cites.
+    # A caller that is about to record a verdict should pass 'raise'.
+    on_degenerate: OnDegenerate = "warn",
+    min_blocks: int = MIN_BLOCKS_FOR_INTERVAL,
 ) -> pd.DataFrame:
     """Block-bootstrap methods and market deltas from sufficient statistics.
 
@@ -442,6 +680,13 @@ def outcome_bootstrap_intervals(
     season. Aggregating those contributions once and matrix-multiplying sampled
     block counts is exactly equivalent to repeatedly materializing sampled
     pandas frames, while avoiding thousands of groupby/metric passes.
+
+    Every row carries ``blocks`` and ``degenerate_blocks``. Below the measured
+    floor (``estimation_variance.MIN_BLOCKS_FOR_INTERVAL``) the percentile
+    bootstrap's coverage is nowhere near nominal, so ``lower``/``upper`` (and
+    ``delta_lower``/``delta_upper``) on a flagged row are not a 95% interval
+    and must not be read as one. See ``experiments.paired_feature_comparisons``
+    for the same guard on paired deltas.
     """
 
     if samples < 10:
@@ -469,6 +714,12 @@ def outcome_bootstrap_intervals(
 
     contributions = _outcome_bootstrap_contributions(predictions, group_columns)
     block_count = int(contributions["_bootstrap_block"].max()) + 1
+    block_verdict = guard_block_count(
+        block_count,
+        min_blocks=min_blocks,
+        on_degenerate=on_degenerate,
+        context=f"outcome_bootstrap_intervals(block={block})",
+    )
     method_blocks: dict[str, np.ndarray] = {}
     for method in methods:
         method_rows = contributions.loc[contributions["method"].eq(method)]
@@ -500,6 +751,11 @@ def outcome_bootstrap_intervals(
             "confidence": confidence,
             "block": block,
             "samples": samples,
+            "blocks": block_verdict.block_count,
+            # True => lower/upper (and delta_lower/delta_upper) are NOT a
+            # valid interval at this block count. See the docstring; do not
+            # render as one.
+            "degenerate_blocks": block_verdict.degenerate,
         }
         if method != "market" and metric in market:
             delta = method_draws[method][metric] - method_draws["market"][metric]
