@@ -66,6 +66,8 @@
         "cfb-variance-benchmark",
         "odds-ingest",
         "odds-ingest-halves",
+        "splashsports-login",
+        "splashsports-ingest",
         "odds-summary",
         "tiebreaker",
         "pool-observables",
@@ -216,6 +218,14 @@
         {
           "name": "odds-ingest-halves",
           "help": "archive per-event half/quarter-game market quotes (spreads_h1/h2, totals_h1/h2) for the current week's events (LEAD-61)"
+        },
+        {
+          "name": "splashsports-login",
+          "help": "open a browser for you to sign in to splashsports by hand and save the session"
+        },
+        {
+          "name": "splashsports-ingest",
+          "help": "archive this week's splashsports team-pickem spreads; prefers a saved session at --state-path, falls back to SPLASHSPORTS_EMAIL/PASSWORD"
         },
         {
           "name": "odds-summary",
@@ -3042,6 +3052,201 @@
               "choices": null,
               "required": false,
               "help": "ISO8601 UTC instant used ONLY to pick which week's events to fetch; the capture timestamp itself always stays the real current time. Defaults to the real current time (matching production runs). For an ad-hoc verification run made before the scheduled window (e.g. proving the job against next week's slate mid-week) without fabricating the snapshot's own observed_at.",
+              "metavar": null
+            }
+          ],
+          "subcommands": null
+        },
+        {
+          "path": [
+            "splashsports-login"
+          ],
+          "prog": "nfl-ats splashsports-login",
+          "usage": null,
+          "description": null,
+          "epilog": null,
+          "formatter_class": "HelpFormatter",
+          "prefix_chars": "-",
+          "add_help": true,
+          "allow_abbrev": true,
+          "argument_default": null,
+          "conflict_handler": "error",
+          "handler": "nfl_ats.cli_commands.market._cmd_splashsports_login",
+          "other_defaults": {},
+          "actions": [
+            {
+              "action_class": "_HelpAction",
+              "option_strings": [
+                "-h",
+                "--help"
+              ],
+              "dest": "help",
+              "nargs": 0,
+              "const": null,
+              "default": "==SUPPRESS==",
+              "type": null,
+              "choices": null,
+              "required": false,
+              "help": "show this help message and exit",
+              "metavar": null
+            },
+            {
+              "action_class": "_StoreAction",
+              "option_strings": [
+                "--state-path"
+              ],
+              "dest": "state_path",
+              "nargs": null,
+              "const": null,
+              "default": {
+                "__type__": "Path",
+                "value": "data/market/splashsports/auth_state.json"
+              },
+              "type": {
+                "__type__": "callable",
+                "value": "pathlib.Path"
+              },
+              "choices": null,
+              "required": false,
+              "help": null,
+              "metavar": null
+            },
+            {
+              "action_class": "_StoreTrueAction",
+              "option_strings": [
+                "--devtools"
+              ],
+              "dest": "devtools",
+              "nargs": 0,
+              "const": true,
+              "default": false,
+              "type": null,
+              "choices": null,
+              "required": false,
+              "help": "open Chromium DevTools (Network tab, etc.) while signing in",
+              "metavar": null
+            },
+            {
+              "action_class": "_StoreAction",
+              "option_strings": [
+                "--timeout-ms"
+              ],
+              "dest": "timeout_ms",
+              "nargs": null,
+              "const": null,
+              "default": 300000,
+              "type": {
+                "__type__": "callable",
+                "value": "builtins.int"
+              },
+              "choices": null,
+              "required": false,
+              "help": "max time to wait for sign-in to complete; 0 waits indefinitely (for debugging)",
+              "metavar": null
+            }
+          ],
+          "subcommands": null
+        },
+        {
+          "path": [
+            "splashsports-ingest"
+          ],
+          "prog": "nfl-ats splashsports-ingest",
+          "usage": null,
+          "description": null,
+          "epilog": null,
+          "formatter_class": "HelpFormatter",
+          "prefix_chars": "-",
+          "add_help": true,
+          "allow_abbrev": true,
+          "argument_default": null,
+          "conflict_handler": "error",
+          "handler": "nfl_ats.cli_commands.market._cmd_splashsports_ingest",
+          "other_defaults": {},
+          "actions": [
+            {
+              "action_class": "_HelpAction",
+              "option_strings": [
+                "-h",
+                "--help"
+              ],
+              "dest": "help",
+              "nargs": 0,
+              "const": null,
+              "default": "==SUPPRESS==",
+              "type": null,
+              "choices": null,
+              "required": false,
+              "help": "show this help message and exit",
+              "metavar": null
+            },
+            {
+              "action_class": "_StoreAction",
+              "option_strings": [
+                "--state-path"
+              ],
+              "dest": "state_path",
+              "nargs": null,
+              "const": null,
+              "default": {
+                "__type__": "Path",
+                "value": "data/market/splashsports/auth_state.json"
+              },
+              "type": {
+                "__type__": "callable",
+                "value": "pathlib.Path"
+              },
+              "choices": null,
+              "required": false,
+              "help": null,
+              "metavar": null
+            },
+            {
+              "action_class": "_StoreTrueAction",
+              "option_strings": [
+                "--headed"
+              ],
+              "dest": "headed",
+              "nargs": 0,
+              "const": true,
+              "default": false,
+              "type": null,
+              "choices": null,
+              "required": false,
+              "help": "show the browser window instead of running headless (useful for debugging login)",
+              "metavar": null
+            },
+            {
+              "action_class": "_StoreTrueAction",
+              "option_strings": [
+                "--devtools"
+              ],
+              "dest": "devtools",
+              "nargs": 0,
+              "const": true,
+              "default": false,
+              "type": null,
+              "choices": null,
+              "required": false,
+              "help": "open Chromium DevTools (Network tab, etc.) for each page; implies --headed",
+              "metavar": null
+            },
+            {
+              "action_class": "_StoreAction",
+              "option_strings": [
+                "--timeout-ms"
+              ],
+              "dest": "timeout_ms",
+              "nargs": null,
+              "const": null,
+              "default": null,
+              "type": {
+                "__type__": "callable",
+                "value": "builtins.int"
+              },
+              "choices": null,
+              "required": false,
+              "help": "max time to wait for sign-in to resolve; unset uses Playwright's 30s default, 0 waits indefinitely (for debugging)",
               "metavar": null
             }
           ],

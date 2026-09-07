@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pandas as pd
 
@@ -35,6 +36,14 @@ from nfl_ats.odds_backfill import (
 )
 from nfl_ats.open_close_market import fetch_open_close_snapshot
 from nfl_ats.source_policy import require_private_raw_destination
+from nfl_ats.splashsports import (
+    LOGIN_TIMEOUT_MS,
+    credentials_from_environment,
+    fetch_splashsports_picksheet_html,
+    login_and_save_splashsports_session,
+    parse_splashsports_spreads,
+    write_splashsports_snapshot,
+)
 
 
 def _cmd_odds_ingest(args: argparse.Namespace) -> None:
@@ -187,6 +196,46 @@ def _cmd_odds_summary(_: argparse.Namespace) -> None:
     )
 
 
+def _splashsports_state_path() -> Path:
+    return _data_root() / "market" / "splashsports" / "auth_state.json"
+
+
+def _cmd_splashsports_login(args: argparse.Namespace) -> None:
+    login_and_save_splashsports_session(
+        args.state_path, devtools=args.devtools, timeout_ms=args.timeout_ms
+    )
+    _print_json({"state_path": str(args.state_path)})
+
+
+def _cmd_splashsports_ingest(args: argparse.Namespace) -> None:
+    credentials = credentials_from_environment()
+    observed_at = datetime.now(UTC)
+    page_html = fetch_splashsports_picksheet_html(
+        credentials=credentials,
+        state_path=args.state_path,
+        headless=not args.headed,
+        devtools=args.devtools,
+        timeout_ms=args.timeout_ms,
+    )
+    spreads = parse_splashsports_spreads(page_html, observed_at=observed_at)
+    snapshot = write_splashsports_snapshot(
+        page_html,
+        spreads,
+        _data_root() / "market" / "splashsports" / "raw",
+        observed_at=observed_at,
+    )
+    _print_json(
+        {
+            "snapshot_id": snapshot.snapshot_id,
+            "directory": str(snapshot.root),
+            "slate_label": (str(spreads["slate_label"].iloc[0]) if not spreads.empty else None),
+            "rows": len(spreads),
+            "teams": int(spreads["team_id"].nunique()),
+            "missing_spreads": int(spreads["team_spread"].isna().sum()),
+        }
+    )
+
+
 def _cmd_market_backfill(args: argparse.Namespace) -> None:
     reference_games = _load_features(args.features)
     snapshot = fetch_historical_market_snapshot(
@@ -267,6 +316,53 @@ def register_odds(
         ),
     )
     odds_ingest_halves.set_defaults(handler=_cmd_odds_ingest_halves)
+
+    splashsports_login = subparsers.add_parser(
+        "splashsports-login",
+        help="open a browser for you to sign in to splashsports by hand and save the session",
+    )
+    splashsports_login.add_argument("--state-path", type=Path, default=_splashsports_state_path())
+    splashsports_login.add_argument(
+        "--devtools",
+        action="store_true",
+        help="open Chromium DevTools (Network tab, etc.) while signing in",
+    )
+    splashsports_login.add_argument(
+        "--timeout-ms",
+        type=int,
+        default=LOGIN_TIMEOUT_MS,
+        help="max time to wait for sign-in to complete; 0 waits indefinitely (for debugging)",
+    )
+    splashsports_login.set_defaults(handler=_cmd_splashsports_login)
+
+    splashsports_ingest = subparsers.add_parser(
+        "splashsports-ingest",
+        help=(
+            "archive this week's splashsports team-pickem spreads; prefers a saved "
+            "session at --state-path, falls back to SPLASHSPORTS_EMAIL/PASSWORD"
+        ),
+    )
+    splashsports_ingest.add_argument("--state-path", type=Path, default=_splashsports_state_path())
+    splashsports_ingest.add_argument(
+        "--headed",
+        action="store_true",
+        help="show the browser window instead of running headless (useful for debugging login)",
+    )
+    splashsports_ingest.add_argument(
+        "--devtools",
+        action="store_true",
+        help="open Chromium DevTools (Network tab, etc.) for each page; implies --headed",
+    )
+    splashsports_ingest.add_argument(
+        "--timeout-ms",
+        type=int,
+        default=None,
+        help=(
+            "max time to wait for sign-in to resolve; unset uses Playwright's 30s "
+            "default, 0 waits indefinitely (for debugging)"
+        ),
+    )
+    splashsports_ingest.set_defaults(handler=_cmd_splashsports_ingest)
 
     odds_summary = subparsers.add_parser(
         "odds-summary", help="summarize locally archived point-in-time quotes"

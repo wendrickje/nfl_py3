@@ -6,7 +6,7 @@ index, not a substitute for inspecting them.
 
 Handoff schema: `1`
 
-Refreshed at: `2026-08-14T15:47:20.323176+00:00`
+Refreshed at: `2026-09-07T21:03:30.746779+00:00`
 
 ## Start here
 
@@ -20,15 +20,12 @@ Refreshed at: `2026-08-14T15:47:20.323176+00:00`
 ## Commit context before this refresh
 
 - Branch: `claude/affectionate-dijkstra-d3c1qe`
-- Baseline commit: `ed5406a5143e` — Merge pull request #2 from wendrickje/claude/pull-from-source-fork-zocrc6
-- Pending change set: 7 paths
-  - `M  .env.example`
-  - `M  pyproject.toml`
-  - `M  src/nfl_ats/cli.py`
-  - `A  src/nfl_ats/splashsports.py`
-  - `A  tests/fixtures/splashsports_picksheet.html`
-  - `A  tests/test_splashsports.py`
-  - `M  uv.lock`
+- Baseline commit: `7fed3642fc5b` — Merge remote-tracking branch 'upstream/master' into claude/affectionate-dijkstra-d3c1qe
+- Pending change set: 4 paths
+  - `M  HANDOFF.md`
+  - `M  README.md`
+  - `M  src/nfl_ats/cli_commands/market.py`
+  - `M  tests/fixtures/cli_contract.json`
 
 The baseline commit and pending paths were observed before the automatic refresh.
 They normally describe the parent and contents of the handoff-bearing commit. Always
@@ -38,7 +35,7 @@ trust live Git output after checkout.
 
 Local active-model artifacts are unavailable. This is expected in a fresh clone; use the tracked forecast below as the last published state and regenerate local artifacts before changing model claims.
 
-The 52.29% figure is the distinct secondary close-grade historical classification, not the raw-model opener baseline, the promoted player-arrest policy evaluation, a game-specific probability, or proof of a profitable or stable market edge.
+Historical forced-pick ATS classification accuracy (see `artifacts/active_ats_model.json` once local artifacts exist) is not a game-specific probability and not proof of a profitable or stable market edge.
 
 ## Last tracked weekly publication
 
