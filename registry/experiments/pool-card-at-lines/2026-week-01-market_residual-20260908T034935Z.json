@@ -1,0 +1,163 @@
+{
+  "artifact_directory": "artifacts\\pool_at_lines\\2026-week-01-market_residual-20260908T034935Z",
+  "backfill_note": null,
+  "code_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "code_dirty": true,
+  "code_revision": "bb8eb9cba0ac3a6c6b4cc51227f6f0c0e4d48b6b",
+  "command": "pool-card-at-lines",
+  "config_hash": "0e29a7229892595a11caaf4213d7cdc0d9f03bed891b697645476a9eb0946bc5",
+  "experiment_id": "pool-card-at-lines/2026-week-01-market_residual-20260908T034935Z",
+  "feature_table_sha256": "7adda1ba7577aeee5cdf737ec2cdcf54cbbd0f09b6de6584340644906ae8d056",
+  "metrics": {
+    "command": "pool-card-at-lines",
+    "created_at_utc": "2026-09-08T03:49:35.511915+00:00",
+    "feature_profile": "player",
+    "games": 16,
+    "line_source": "lines_file:data\\market\\splashsports\\lines_2026_week1.csv",
+    "method": "market_residual",
+    "min_train_games": 500,
+    "provenance": {
+      "code": {
+        "dirty": true,
+        "revision": "bb8eb9cba0ac3a6c6b4cc51227f6f0c0e4d48b6b"
+      },
+      "configuration": {
+        "command": "pool-card-at-lines",
+        "feature_profile": "player",
+        "line_source": "lines_file:data\\market\\splashsports\\lines_2026_week1.csv",
+        "method": "market_residual",
+        "min_train_games": 500,
+        "push_rule": "loss",
+        "regressor": "ridge",
+        "ridge_alpha": 10.0,
+        "season": 2026,
+        "week": 1
+      },
+      "configuration_sha256": "0e29a7229892595a11caaf4213d7cdc0d9f03bed891b697645476a9eb0946bc5",
+      "environment": {
+        "blas": {
+          "available": true,
+          "blas_name": "scipy-openblas",
+          "blas_version": "0.3.34.0.0",
+          "lapack_name": "scipy-openblas",
+          "lapack_version": "0.3.34.0.0"
+        },
+        "environment_variables": {},
+        "generated_at_utc": "2026-09-08T03:49:35Z",
+        "git": {
+          "dirty": true,
+          "revision": "bb8eb9cba0ac3a6c6b4cc51227f6f0c0e4d48b6b"
+        },
+        "packages": {
+          "joblib": "1.5.3",
+          "nflreadpy": "0.1.5",
+          "numpy": "2.5.2",
+          "pandas": "3.0.5",
+          "pyarrow": "25.0.1",
+          "pypdf": "6.16.2",
+          "scikit-learn": "1.9.0",
+          "scipy": "1.18.0",
+          "tabulate": "0.10.0"
+        },
+        "platform": {
+          "machine": "AMD64",
+          "processor": "Intel64 Family 6 Model 165 Stepping 5, GenuineIntel",
+          "release": "10",
+          "system": "Windows",
+          "version": "10.0.19045"
+        },
+        "python": {
+          "executable": "D:\\git\\nfl_py3\\.venv\\Scripts\\python.exe",
+          "implementation": "CPython",
+          "major": 3,
+          "micro": 13,
+          "minor": 12,
+          "version": "3.12.13 (main, Apr 14 2026, 14:31:26) [MSC v.1944 64 bit (AMD64)]"
+        },
+        "secrets_detected": {
+          "CFBD_API_KEY": false,
+          "CLAUDE_CODE_MESSAGING_TOKEN": true,
+          "SPLASHSPORTS_PASSWORD": true,
+          "THE_ODDS_API_KEY": true
+        },
+        "thread_counts": {
+          "BLIS_NUM_THREADS": null,
+          "MKL_NUM_THREADS": null,
+          "NUMEXPR_NUM_THREADS": null,
+          "OMP_NUM_THREADS": null,
+          "OPENBLAS_NUM_THREADS": null,
+          "VECLIB_MAXIMUM_THREADS": null
+        },
+        "uv": {
+          "available": true,
+          "executable": "C:\\Users\\wendr\\anaconda3\\Scripts\\uv.EXE",
+          "raw": "uv 0.11.7 (9d177269e 2026-04-15 x86_64-pc-windows-msvc)",
+          "version": "0.11.7"
+        },
+        "uv_lock": {
+          "present": true,
+          "sha256": "f1317fb988513e411a33b463459b734318e4138f31e37e911390a6ad57226e39"
+        }
+      },
+      "feature_table": {
+        "manifest": {
+          "artifact_contract": {
+            "builder_module": "nfl_ats.features",
+            "builder_version": "v1",
+            "kind": "feature_table",
+            "schema_version": 1
+          },
+          "built_at_utc": "2026-09-08T01:29:47.374401+00:00",
+          "decision_hours_before_kickoff": 24,
+          "destination": "data\\processed\\game_features_player.parquet",
+          "games_with_both_injury_states": 3538,
+          "games_with_both_lineup_continuity_states": 3802,
+          "games_with_both_player_value_states": 3270,
+          "games_with_both_projected_qbs": 4886,
+          "injury_timestamp_fallback": "drop",
+          "offseason_retention": 0.75,
+          "player_feature_version": "v2",
+          "qb_min_dropbacks": 20,
+          "qb_span": 12,
+          "role_span": 8,
+          "rows": 4902,
+          "source_depth_snapshot": null,
+          "source_features": "data\\processed\\game_features_pbp.parquet",
+          "source_pbp_snapshot": "20260908T011418Z",
+          "source_player_snapshot": "20260908T011902Z",
+          "source_player_value_snapshot": "20260908T012515Z",
+          "source_snapshots": {
+            "source_pbp_snapshot": {
+              "captured_at": "2026-09-08T01:14:18+00:00",
+              "manifest_path": "data\\processed\\game_features_pbp.manifest.json",
+              "snapshot_id": "20260908T011418Z"
+            },
+            "source_snapshot": {
+              "captured_at": "2026-09-08T01:25:30+00:00",
+              "manifest_path": "data\\processed\\game_features.manifest.json",
+              "snapshot_id": "20260908T012530Z"
+            }
+          },
+          "value_prior_snaps": 200.0,
+          "value_span": 16
+        },
+        "path": "D:\\git\\nfl_py3\\data\\processed\\game_features_player.parquet",
+        "sha256": "7adda1ba7577aeee5cdf737ec2cdcf54cbbd0f09b6de6584340644906ae8d056"
+      },
+      "uv_lock_sha256": "f1317fb988513e411a33b463459b734318e4138f31e37e911390a6ad57226e39"
+    },
+    "push_rule": "loss",
+    "regressor": "ridge",
+    "ridge_alpha": 10.0,
+    "season": 2026,
+    "week": 1
+  },
+  "notes": "",
+  "provenance_backfilled": false,
+  "recorded_at": "2026-09-08T03:49:35.511915+00:00",
+  "rotation_family": null,
+  "schema_version": 1,
+  "source": "nfl-ats pool-card-at-lines",
+  "uv_lock_sha256": "f1317fb988513e411a33b463459b734318e4138f31e37e911390a6ad57226e39",
+  "weak_signal_name": null
+}
