@@ -40,6 +40,11 @@ CONTEST_CARD_SELECTOR = '[data-test-id="dt.common.components.contestCard"]'
 ENTRIES_PAGE_SELECTOR = '[data-testid="my-entries-page"]'
 FIRST_ENTRY_PICK_SELECTOR = '[data-testid^="entry-pick-"][data-testid$="-0"]'
 PICKSHEET_PAGE_SELECTOR = '[data-testid="picksheet-page"]'
+# The picksheet page shell renders before its game cards, which populate from
+# an async request after mount; capturing page.content() right after
+# PICKSHEET_PAGE_SELECTOR appears (rather than after this) reliably yields a
+# shell with zero cards.
+GAME_CARD_SELECTOR = '[data-testid^="game-pick-card-"]'
 
 # How long a human has to complete sign-in (including any captcha challenge)
 # in the window opened by `login_and_save_splashsports_session`.
@@ -216,6 +221,7 @@ def fetch_splashsports_picksheet_html(
 
             page.locator(FIRST_ENTRY_PICK_SELECTOR).first.click()
             page.wait_for_selector(PICKSHEET_PAGE_SELECTOR)
+            page.wait_for_selector(GAME_CARD_SELECTOR)
 
             return page.content()  # type: ignore[no-any-return]
         finally:
