@@ -6,7 +6,7 @@ index, not a substitute for inspecting them.
 
 Handoff schema: `1`
 
-Refreshed at: `2026-09-17T12:00:03.728161+00:00`
+Refreshed at: `2026-09-17T12:09:36.859196+00:00`
 
 ## Start here
 
@@ -20,17 +20,10 @@ Refreshed at: `2026-09-17T12:00:03.728161+00:00`
 ## Commit context before this refresh
 
 - Branch: `claude/affectionate-dijkstra-d3c1qe`
-- Baseline commit: `389e8c32bcd9` — Document and script the Splashsports pool-card workflow
-- Pending change set: 16 paths
+- Baseline commit: `bb50935c0932` — Fix scheduler F: drive paths, Splashsports scraper drift, publish Week 2 card
+- Pending change set: 9 paths
   - `M  CURRENT_PREDICTIONS.md`
   - `M  README.md`
-  - `M  scripts/odds_capture.ps1`
-  - `M  scripts/public_betting_capture.ps1`
-  - `M  scripts/splashsports_lines_file.py`
-  - `M  scripts/start_capture_scheduler.cmd`
-  - `M  src/nfl_ats/splashsports.py`
-  - `M  tests/fixtures/splashsports_picksheet.html`
-  - `M  tests/test_splashsports.py`
   - `?? registry/experiments/margin-backtest/20260908T042309Z.json`
   - `?? registry/experiments/margin-backtest/20260908T042437Z.json`
   - `?? registry/experiments/margin-backtest/20260917T023336Z.json`
