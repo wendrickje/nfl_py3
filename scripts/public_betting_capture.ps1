@@ -15,7 +15,7 @@
 # this holds if the task is ever registered on a different machine.
 
 $ErrorActionPreference = 'Stop'
-$repo = 'F:\Repos\nfl_py3'
+$repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
 $stamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')

@@ -7,36 +7,34 @@ constructs every feature strictly from information available before kickoff,
 and evaluates model choices with nested chronological walk-forward tests.
 
 <!-- CURRENT_PREDICTIONS:START -->
-## Current ATS forecast: 2026 Week 1
+## Current ATS forecast: 2026 Week 2
 
 > **Lines, injuries, depth charts, and model inputs may change before kickoff.** Regenerate and republish this card as the week approaches.
 
-Active model: weak stack (market residual). Its distinct close-graded chronological 2018-2025 evaluation classified **1,085 of 2,075 non-push games correctly (52.29%)**. The 95% range was 50.17%-54.34%. The model's baseline comparison is the separate opener-graded accuracy rule documented in `docs/opener_evaluation.md`.
+Active model: market residual (player features). Its distinct close-graded chronological evaluation classified **1,084 of 2,090 non-push games correctly (51.87%)**. The 95% (season-blocked) range was 50.02%-54.03%. The model's baseline comparison is the separate opener-graded accuracy rule documented in `docs/opener_evaluation.md`.
 
-**Production policy active:** three situational rules run independently against the computer's first pick and flip it once when any one of them fires: coach fade, division revenge, and player arrests. This week they changed 2 picks. The spread-only threshold adjustment is retired because it has no explained mechanism. Its archive comparison reuses 127 similar combinations scored on the same games; it is not independent evidence of future accuracy. The planning estimate remains ≈55%. Paired prospective tracking against the former four-adjustment card begins at the Week 1 lock. Rules: coach fade, division revenge tilt, player arrests back side policy. See docs/spread_gap_zone_retired.md.
-
-**Best Pick of the week (★):** MIA +3.5 in MIA at LV. The pool scores one Best Pick per regular-season week. This pick was nominated by calibrated probability among low-disagreement games.
+**Splashsports pool-lines card:** these picks are the raw active model scored directly at Splashsports' own team-pickem spreads (`nfl-ats pool-card-at-lines`, lines captured 2026-09-17), not the full published pipeline -- the coach-fade/division-revenge/player-arrest overlays and Best Pick nomination were not computed for this card.
 
 | Date        | Matchup    | ATS prediction   | Decision score   |
 |:------------|:-----------|:-----------------|:-----------------|
-| Wed, Sep 09 | NE at SEA  | NE +3.5          | 50.2%            |
-| Thu, Sep 10 | SF at LA   | SF +3.5          | 55.6%            |
-| Sun, Sep 13 | ARI at LAC | ARI +10.5        | 66.6%            |
-| Sun, Sep 13 | ATL at PIT | ATL +3.5         | 55.9%            |
-| Sun, Sep 13 | BAL at IND | IND +3.5         | 55.5%            |
-| Sun, Sep 13 | BUF at HOU | HOU +1.5         | 54.2%            |
-| Sun, Sep 13 | CHI at CAR | CAR +2.5         | 51.6%            |
-| Sun, Sep 13 | CLE at JAX | JAX -7.5         | 51.1%            |
-| Sun, Sep 13 | DAL at NYG | DAL -2.5         | 50.2%            |
-| Sun, Sep 13 | GB at MIN  | MIN -1.5         | 54.1%            |
-| Sun, Sep 13 | MIA at LV  | ★ MIA +3.5       | 56.0%            |
-| Sun, Sep 13 | NO at DET  | DET -7           | 52.1%            |
-| Sun, Sep 13 | NYJ at TEN | NYJ +1.5         | 51.6%            |
-| Sun, Sep 13 | TB at CIN  | CIN -3.5         | 50.9%            |
-| Sun, Sep 13 | WAS at PHI | WAS +5.5         | 63.3%            |
-| Mon, Sep 14 | DEN at KC  | KC -3            | 51.8%            |
+| Thu, Sep 17 | DET at BUF | DET +4.5         | 52.9%            |
+| Sun, Sep 20 | CAR at ATL | ATL +1.5         | 51.1%            |
+| Sun, Sep 20 | CIN at HOU | CIN +2.5         | 53.1%            |
+| Sun, Sep 20 | CLE at TB  | TB -8.5          | 59.2%            |
+| Sun, Sep 20 | GB at NYJ  | NYJ +3.5         | 53.8%            |
+| Sun, Sep 20 | IND at KC  | KC -6.5          | 56.6%            |
+| Sun, Sep 20 | JAX at DEN | DEN -2.5         | 60.7%            |
+| Sun, Sep 20 | LV at LAC  | LV +7.5          | 60.1%            |
+| Sun, Sep 20 | MIA at SF  | SF -13.5         | 56.9%            |
+| Sun, Sep 20 | MIN at CHI | CHI -5.5         | 54.6%            |
+| Sun, Sep 20 | NO at BAL  | BAL -8.5         | 57.0%            |
+| Sun, Sep 20 | PHI at TEN | TEN +6.5         | 61.1%            |
+| Sun, Sep 20 | PIT at NE  | NE -4.5          | 57.5%            |
+| Sun, Sep 20 | SEA at ARI | SEA -4.5         | 54.7%            |
+| Sun, Sep 20 | WAS at DAL | WAS +3.5         | 52.6%            |
+| Mon, Sep 21 | NYG at LA  | LA -7.5          | 57.7%            |
 
-[Open the standalone card](CURRENT_PREDICTIONS.md) for provenance and interpretation.
+Generated from `artifacts/pool_at_lines/2026-week-02-market_residual-20260917T030758Z/`; `CURRENT_PREDICTIONS.md` still reflects Week 1 and has not been regenerated for this card.
 <!-- CURRENT_PREDICTIONS:END -->
 
 ## Active model and grades
@@ -47,10 +45,10 @@ close. A close-graded number alone is never grounds to reject a candidate
 (see `AGENTS.md`); it is reported below only as the secondary figure it is.
 
 <!-- ACTIVE_MODEL_STATE:START -->
-Active model: `market_residual` with `player` features (`3d3224a00a1fd14d`), regressor `ridge`, ridge alpha `10.0`, calibration `none`.
+Active model: `market_residual` with `player` features (`74a2224d5ce8ee8f`), regressor `ridge`, ridge alpha `10.0`, calibration `none`.
 
 - **Opener-graded, probability-rule accuracy (the pool-relevant grade -- picks lock Tuesday against a frozen line):** **unavailable in local artifacts** (no `artifacts/opener_evaluation/` run matches this active model's recipe; run `nfl-ats opener-evaluation` to produce one).
-- Close-graded accuracy (secondary -- the market's sharpest, and least representative, decision point): **51.86%** (1,076 of 2,075 non-push games), week-blocked 95% interval [49.71%, 54.10%].
+- Close-graded accuracy (secondary -- the market's sharpest, and least representative, decision point): **51.87%** (1,084 of 2,090 non-push games), week-blocked 95% interval [49.85%, 54.07%].
 
 Neither figure is a game-specific probability, and neither is proof of a profitable or stable market edge (see `AGENTS.md`).
 <!-- ACTIVE_MODEL_STATE:END -->

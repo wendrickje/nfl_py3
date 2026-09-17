@@ -32,7 +32,13 @@ if str(_SRC) not in sys.path:
 
 # Duplicated verbatim from scripts/movement_attribution.py's TEAM_NICKNAMES,
 # per this repo's convention of not importing across scripts/*.py files.
-# Splashsports' picksheet shows full nicknames ("Patriots"), not abbreviations.
+# Until 2026-09-17 Splashsports' picksheet only exposed full nicknames
+# ("Patriots") next to each spread, so `parse_splashsports_spreads` recorded
+# `team_code` as the nickname and this map did the nickname-to-abbreviation
+# join. The site has since added its own abbreviation (`team-abbrev-*`,
+# e.g. "DET +4.5"), which `parse_splashsports_spreads` now records directly as
+# `team_code`, already normalized. `_resolve_abbr` below accepts either form
+# so an old cached snapshot still joins correctly.
 TEAM_NICKNAMES: dict[str, str] = {
     "cardinals": "ARI",
     "falcons": "ATL",
@@ -69,6 +75,14 @@ TEAM_NICKNAMES: dict[str, str] = {
 }
 
 
+def _resolve_abbr(team_code: str) -> str | None:
+    """Accept either an already-normalized abbreviation or a nickname."""
+
+    if team_code in TEAM_NICKNAMES.values():
+        return team_code
+    return TEAM_NICKNAMES.get(team_code.lower())
+
+
 def _latest(root: Path, glob: str) -> Path:
     candidates = sorted(root.glob(glob))
     if not candidates:
@@ -85,7 +99,7 @@ def build_lines_file(*, season: int, week: int, destination: Path) -> pd.DataFra
 
     spreads_path = _latest(REPO / "data" / "market" / "splashsports" / "raw", "*/spreads.parquet")
     spreads = pd.read_parquet(spreads_path).copy()
-    spreads["abbr"] = spreads["team_code"].str.lower().map(TEAM_NICKNAMES)
+    spreads["abbr"] = spreads["team_code"].map(_resolve_abbr)
     unmapped = spreads.loc[spreads["abbr"].isna(), "team_code"].unique()
     if len(unmapped):
         raise ValueError(f"unmapped Splashsports team code(s): {sorted(unmapped)}")

@@ -254,16 +254,16 @@ def parse_splashsports_spreads(
         team_rows = card.xpath('.//*[starts-with(@data-testid, "team-row-")]')
         for team_row in team_rows:
             team_id = team_row.get("data-testid").removeprefix("team-row-")
-            spread_nodes = team_row.xpath(f'.//*[@data-testid="team-spread-{team_id}"]')
-            if not spread_nodes:
+            # Observed 2026-09-17: the site dropped the separate
+            # `team-spread-{team_id}` node in favor of one combined
+            # `team-abbrev-{team_id}` span whose text is "{CODE} {SPREAD}"
+            # (e.g. "DET +4.5"), or just "{CODE}" before a line posts.
+            abbrev_nodes = team_row.xpath(f'.//*[@data-testid="team-abbrev-{team_id}"]')
+            if not abbrev_nodes:
                 continue
-            spread_text = spread_nodes[0].text_content().strip()
-            # The abbreviation span has no data-testid of its own; it is the
-            # element immediately before the spread span in the same wrapper.
-            abbreviation_nodes = spread_nodes[0].xpath("preceding-sibling::span[1]")
-            splashsports_code = (
-                abbreviation_nodes[0].text_content().strip() if abbreviation_nodes else ""
-            )
+            abbrev_text = abbrev_nodes[0].text_content().strip()
+            splashsports_code, _, spread_text = abbrev_text.partition(" ")
+            spread_text = spread_text.strip()
             rows.append(
                 {
                     "observed_at_utc": observed,

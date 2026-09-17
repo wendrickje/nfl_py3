@@ -26,13 +26,13 @@ _CARD_TEMPLATE = """
 <article data-testid="game-pick-card-{game_id}">
   <div data-testid="winner-picks">
     <button data-testid="team-row-{home_id}">
-      <span class="flex"><span class="truncate">{home_code}</span>
-      <span data-testid="team-spread-{home_id}">{home_spread}</span>
+      <span class="flex"><span class="truncate">{home_name}</span>
+      <span data-testid="team-abbrev-{home_id}">{home_code} {home_spread}</span>
       <span class="icons"></span></span>
     </button>
     <button data-testid="team-row-{away_id}">
-      <span class="flex"><span class="truncate">{away_code}</span>
-      <span data-testid="team-spread-{away_id}">{away_spread}</span>
+      <span class="flex"><span class="truncate">{away_name}</span>
+      <span data-testid="team-abbrev-{away_id}">{away_code} {away_spread}</span>
       <span class="icons"></span></span>
     </button>
   </div>
@@ -44,9 +44,11 @@ def _synthetic_page() -> str:
     return _CARD_TEMPLATE.format(
         game_id="g1",
         home_id="home-1",
+        home_name="Seahawks",
         home_code="SEA",
         home_spread="-3.5",
         away_id="away-1",
+        away_name="Patriots",
         away_code="NE",
         away_spread="+3.5",
     )
@@ -56,17 +58,21 @@ def test_parse_splashsports_spreads_numeric_and_pk() -> None:
     page = _CARD_TEMPLATE.format(
         game_id="g1",
         home_id="home-1",
+        home_name="Seahawks",
         home_code="SEA",
         home_spread="-3.5",
         away_id="away-1",
+        away_name="Patriots",
         away_code="NE",
         away_spread="+3.5",
     ) + _CARD_TEMPLATE.format(
         game_id="g2",
         home_id="home-2",
+        home_name="Jaguars",
         home_code="JAC",
         home_spread="PK",
         away_id="away-2",
+        away_name="Browns",
         away_code="CLE",
         away_spread="PK",
     )
@@ -83,14 +89,16 @@ def test_parse_splashsports_spreads_numeric_and_pk() -> None:
 
 
 def test_parse_splashsports_spreads_from_real_fixture() -> None:
+    # Captured 2026-09-17 (2026 Week 2); the site had by then replaced the
+    # separate `team-spread-{team_id}` node with a combined
+    # `team-abbrev-{team_id}` span ("DET +4.5") -- see parse_splashsports_spreads.
     html = FIXTURE.read_text(encoding="utf-8")
-    frame = parse_splashsports_spreads(html, observed_at=datetime(2026, 9, 1, tzinfo=UTC))
+    frame = parse_splashsports_spreads(html, observed_at=datetime(2026, 9, 17, tzinfo=UTC))
 
     assert len(frame) == 32
     assert frame["team_id"].nunique() == 32
-    assert frame["slate_label"].iloc[0] == "Week 1"
-    # Spreads had not posted yet when this page was captured.
-    assert frame["team_spread"].isna().all()
+    assert frame["slate_label"].iloc[0] == "Week 2"
+    assert frame["team_spread"].notna().all()
     assert set(frame["team_code"]) >= {"NE", "SEA", "SF", "JAX"}
 
 
@@ -128,10 +136,10 @@ def test_parse_splashsports_spreads_handles_malformed_rows() -> None:
     page = """
     <article data-testid="game-pick-card-g1">
       <div data-testid="winner-picks">
-        <button data-testid="team-row-missing-spread"><span>NE</span></button>
+        <button data-testid="team-row-missing-abbrev"><span>NE</span></button>
         <button data-testid="team-row-home-1">
           <span class="flex"><span class="truncate">SEA</span>
-          <span data-testid="team-spread-home-1">not-a-number</span>
+          <span data-testid="team-abbrev-home-1">SEA not-a-number</span>
           <span class="icons"></span></span>
         </button>
       </div>

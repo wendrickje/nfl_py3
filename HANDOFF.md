@@ -6,7 +6,7 @@ index, not a substitute for inspecting them.
 
 Handoff schema: `1`
 
-Refreshed at: `2026-09-08T04:13:21.431646+00:00`
+Refreshed at: `2026-09-17T12:00:03.728161+00:00`
 
 ## Start here
 
@@ -20,15 +20,24 @@ Refreshed at: `2026-09-08T04:13:21.431646+00:00`
 ## Commit context before this refresh
 
 - Branch: `claude/affectionate-dijkstra-d3c1qe`
-- Baseline commit: `bb8eb9cba0ac` — patched splashsports scrape
-- Pending change set: 7 paths
+- Baseline commit: `389e8c32bcd9` — Document and script the Splashsports pool-card workflow
+- Pending change set: 16 paths
+  - `M  CURRENT_PREDICTIONS.md`
   - `M  README.md`
-  - `A  registry/experiments/margin-backtest/20260908T013256Z.json`
-  - `A  registry/experiments/margin-predict/2026-week-01-20260908T013301Z.json`
-  - `A  registry/experiments/pool-card-at-lines/2026-week-01-market_residual-20260908T034713Z.json`
-  - `A  registry/experiments/pool-card-at-lines/2026-week-01-market_residual-20260908T034935Z.json`
-  - `A  scripts/bootstrap_ingest.py`
-  - `A  scripts/splashsports_lines_file.py`
+  - `M  scripts/odds_capture.ps1`
+  - `M  scripts/public_betting_capture.ps1`
+  - `M  scripts/splashsports_lines_file.py`
+  - `M  scripts/start_capture_scheduler.cmd`
+  - `M  src/nfl_ats/splashsports.py`
+  - `M  tests/fixtures/splashsports_picksheet.html`
+  - `M  tests/test_splashsports.py`
+  - `?? registry/experiments/margin-backtest/20260908T042309Z.json`
+  - `?? registry/experiments/margin-backtest/20260908T042437Z.json`
+  - `?? registry/experiments/margin-backtest/20260917T023336Z.json`
+  - `?? registry/experiments/margin-backtest/20260917T025406Z.json`
+  - `?? registry/experiments/margin-predict/2026-week-02-20260917T023340Z.json`
+  - `?? registry/experiments/margin-predict/2026-week-02-20260917T025410Z.json`
+  - `?? registry/experiments/pool-card-at-lines/2026-week-02-market_residual-20260917T030758Z.json`
 
 The baseline commit and pending paths were observed before the automatic refresh.
 They normally describe the parent and contents of the handoff-bearing commit. Always
@@ -37,18 +46,18 @@ trust live Git output after checkout.
 ## Current model evidence
 
 - Status: **SYNCHRONIZED**; linked artifacts present: **true**
-- Model ID: `3d3224a00a1fd14d`
+- Model ID: `74a2224d5ce8ee8f`
 - Method/profile/regressor/alpha/calibration: `market_residual` / `player` / `ridge` / `10.0` / `none`
 - Raw-model baseline (opener-graded probability rule): **unavailable in local artifacts**
 - Promoted player-arrest policy component (opener-graded): **53.76%** versus **53.36%** on **1,503 games** (+0.399 accuracy points; `probability_positive=0.8562`); the live card applies this after the coach policy, while paired prospective tracking continues
-- Secondary close-grade historical classification: **1,076 / 2,075 (51.86%)**
-- Linked forecast: **2026 Week 1**, created `2026-09-08T01:33:01.069208+00:00`
+- Secondary close-grade historical classification: **1,084 / 2,090 (51.87%)**
+- Linked forecast: **2026 Week 2**, created `2026-09-17T02:54:10.187568+00:00`
 
-The 51.86% figure is the distinct secondary close-grade historical classification, not the raw-model opener baseline, the promoted player-arrest policy evaluation, a game-specific probability, or proof of a profitable or stable market edge.
+The 51.87% figure is the distinct secondary close-grade historical classification, not the raw-model opener baseline, the promoted player-arrest policy evaluation, a game-specific probability, or proof of a profitable or stable market edge.
 
 ## Last tracked weekly publication
 
-[CURRENT_PREDICTIONS.md](CURRENT_PREDICTIONS.md) contains **2026 Week 1** from model `a4c757efd2525da6`, published `2026-09-07T16:49:39.799929+00:00`. It is an early, mutable research preview. **Warning:** the tracked publication does not match the local active model; run `nfl-ats publish-predictions` before publishing model claims.
+No valid tracked weekly publication was found.
 
 ## Local reproducibility inventory
 

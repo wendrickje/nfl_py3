@@ -5,7 +5,7 @@
 # Appends a one-line result per run to data\market\capture_log.txt.
 
 $ErrorActionPreference = 'Stop'
-$repo = 'F:\Repos\nfl_py3'
+$repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
 $stamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')

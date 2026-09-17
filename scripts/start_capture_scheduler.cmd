@@ -29,10 +29,18 @@ REM Health check:  .tools\uv.exe run --no-sync python scripts\capture_scheduler.
 REM Stop it:       scripts\stop_capture_scheduler.cmd
 REM                (kills by command line; headless means no window title to match)
 
+REM Resolve the repo root from this script's own location so the daemon
+REM survives the repo being cloned or moved to a different path/drive
+REM (observed stale as "F:\Repos\nfl_py3" while the working copy was at
+REM "D:\git\nfl_py3" -- every catch-up job failed with WinError 2 until this
+REM was made dynamic).
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..") do set "REPO=%%~fI"
+
 REM ENG-26 double-start guard: --is-running exits 0 (and prints the pid) when
 REM a fresh heartbeat names a still-alive pid. Refuse to launch a second
 REM daemon on top of it.
-"F:\Repos\nfl_py3\.tools\uv.exe" run --no-sync python "F:\Repos\nfl_py3\scripts\capture_scheduler.py" --is-running
+"%REPO%\.tools\uv.exe" run --no-sync python "%REPO%\scripts\capture_scheduler.py" --is-running
 if not errorlevel 1 (
     echo.
     echo Refusing to start a second capture scheduler daemon.
@@ -41,4 +49,4 @@ if not errorlevel 1 (
 )
 
 powershell -NoProfile -Command ^
-  "Start-Process -WindowStyle Hidden -WorkingDirectory 'F:\Repos\nfl_py3' -FilePath 'F:\Repos\nfl_py3\.tools\uv.exe' -ArgumentList 'run','--no-sync','python','F:\Repos\nfl_py3\scripts\capture_scheduler.py'"
+  "Start-Process -WindowStyle Hidden -WorkingDirectory '%REPO%' -FilePath '%REPO%\.tools\uv.exe' -ArgumentList 'run','--no-sync','python','%REPO%\scripts\capture_scheduler.py'"
